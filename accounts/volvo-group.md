@@ -2,7 +2,7 @@
 
 ## Snapshot
 - **Account:** Volvo Group
-- **Stage:** Discovery
+- **Stage:** Expansion
 - **Owner:** tallmon14@gmail.com
 - **Created:** 2026-05-25
 - **Last updated:** 2026-05-25
@@ -85,10 +85,10 @@ Sources: [Swecon acquisition completed](https://www.volvogroup.com/en/news-and-m
 - **Microsoft Azure** is the cloud platform of record. Volvo Group has used Azure AI Services and Azure AI Document Intelligence in production (10,000+ manual hours saved in a document processing pilot).
 - **Microsoft Power BI** for analytics.
 
-**MDM — Informatica IDMC (confirmed, active):**
-- Volvo Group uses **Informatica IDMC** (Intelligent Data Management Cloud) on Azure as its enterprise MDM/data governance platform.
+**MDM — Salesforce IDMC / formerly Informatica IDMC (confirmed, active — existing Salesforce customer):**
+- Volvo Group uses **Salesforce IDMC** (Intelligent Data Management Cloud, formerly Informatica) on Azure as its enterprise MDM/data governance platform. IDMC was sold to Volvo Group and is now a Salesforce product — Volvo is an existing Salesforce customer.
 - Active job postings confirm: MDM, Data Quality, Data Governance & Catalog, and Data Marketplace modules are all in active use or being built out.
-- Roles being hired: **Data Management Tool (DMT) SME** (Gothenburg) and **Informatica IDMC SME for MDM** (Bangalore). The Bangalore role explicitly covers "IDMC 360 modules" and is the single point of contact for functional MDM.
+- Roles being hired: **Data Management Tool (DMT) SME** (Gothenburg) and **IDMC SME for MDM** (Bangalore). The Bangalore role explicitly covers "IDMC 360 modules" and is the single point of contact for functional MDM.
 - Separately, an **MDM Architect** posting (124822BR) describes building "the MDM environment from initial RFX to full setup" — implying the MDM programme is still maturing/expanding, not fully built.
 
 **Integration / middleware:** No MuleSoft evidence found. SAP integration suite likely given the SAP-heavy stack.
@@ -136,20 +136,19 @@ Sources: [Scott Rafkin EVP CDO](https://www.volvogroup.com/en/investors/corporat
 ---
 
 ### Existing data / MDM posture
-**Current state (confirmed from public signals):**
-- **Informatica IDMC is the incumbent MDM platform** — this is the most important finding for an MDM sale. Volvo Group is not a greenfield prospect; they have already selected and are deploying Informatica IDMC.
-- Informatica is being used for: MDM (IDMC 360 modules), Data Quality, Data Governance & Catalog, and Data Marketplace — all on Microsoft Azure.
-- The Gothenburg-based DMT SME role indicates a Group-level Informatica CoE is being built or expanded.
-- The Bangalore-based IDMC MDM SME role indicates offshore delivery of MDM configuration/maintenance — programme is scaling.
-- An MDM Architect job posting (124822BR) describes building out the MDM environment from RFX through full setup, specifically mentioning "Customer domain" and "automotive industry" experience — confirming Customer MDM is an active workstream.
-- The MDM Architect JD references "Volvo Group Master Data vision & strategy" as an existing document — a formal MDM strategy exists.
-- **Volvo Cars** (a separate company, owned by Geely) separately explored Semarchy XDM for MDM — not relevant to Volvo Group but shows Nordic automotive sector is actively evaluating MDM tools.
+**Current state — existing Salesforce customer (IDMC already sold):**
+- **Salesforce IDMC (formerly Informatica IDMC)** is the deployed MDM platform — Volvo Group is an existing Salesforce customer. This is a land-and-expand play, not a competitive displacement.
+- IDMC is in active use for: MDM (IDMC 360 modules), Data Quality, Data Governance & Catalog, and Data Marketplace — all on Microsoft Azure.
+- Group-level Salesforce/IDMC CoE is established in Gothenburg; offshore MDM delivery centre in Bangalore is scaling the programme.
+- MDM Architect role (124822BR) is actively building out the Customer domain MDM environment — the programme is maturing but not complete.
+- A formal "Volvo Group Master Data vision & strategy" document exists (referenced in JD).
 
-**Implication for Salesforce MDM sale:**
-Volvo Group has Informatica IDMC as the incumbent. The Salesforce angle must be positioned as a **complement or competitive displacement**:
-- If Volvo Group uses SAP CRM (not Salesforce), the Salesforce Data Cloud / MDM pitch is harder without a CRM hook.
-- However: the 1M+ connected assets, Azure AI investment, and multi-brand dealer fragmentation create a strong case for a **customer/asset master data hub** that can serve connected-truck analytics, aftersales, and dealer portals — potentially supplementing Informatica with Salesforce Data Cloud if Volvo moves to Salesforce CRM in the future.
-- The S/4HANA migration (consolidating 40+ ECC instances) is the **most actionable near-term trigger**: data harmonisation before/during migration is exactly the MDM use case, and Informatica's current deployment may not be mature enough to handle the migration data challenge without augmentation.
+**Expansion opportunity — what Salesforce sells next:**
+The IDMC foundation is in place. The expansion pitch is to deepen and broaden the Salesforce footprint:
+- **Salesforce Data Cloud** on top of IDMC: activates the unified customer/asset master for real-time analytics, segmentation, and the connected-vehicle aftersales use case (1M+ assets needing correct customer-to-asset matching).
+- **MuleSoft**: harmonise data flows across SAP ECC/S/4HANA, brand-siloed dealer systems, and connected-vehicle telemetry — complements IDMC as the integration layer.
+- **Agentforce / Einstein**: AI use cases (adaptive maintenance, fleet uptime predictions) depend on the clean master data that IDMC provides — Agentforce is the natural next layer.
+- **S/4HANA migration workstream**: consolidating 40+ ECC instances requires pre-migration master data harmonisation; position IDMC + Data Cloud as the migration-readiness data services layer.
 
 Sources: [DMT SME Gothenburg job](https://jobs.volvogroup.com/job/G%C3%B6teborg-Data-Management-Tool-(DMT)-SME-417-55/1158918755/); [Informatica IDMC SME MDM Bangalore job](https://jobs.volvogroup.com/job/Bangalore-Data-Management-Tool-(Informatica-IDMC)-SME-for-MDM-562122/1150651755/); [MDM Architect job](https://www.volvogroup.com/en/careers/job-openings/124822BR.html); [SAP CCOE/ASUG Volvo](https://www.asug.com/insights/volvo-group-leverages-sap-ccoe-asug-resources-in-digitalization-drive)
 
@@ -166,7 +165,7 @@ Researched: 2026-05-25. Confidence: **medium-high** — Core financials, technol
 - **Paper Process:** _(tbd  Procurement / legal / security steps to sign)_
 - **Identified Pain:** Multi-brand dealer duplicate records (Volvo/Renault/Mack siloed); SAP S/4HANA migration data readiness (40+ ECC instances to consolidate); Swecon acquisition customer/asset record integration (active now)
 - **Champion:** _(tbd  Internal advocate selling on your behalf — likely Head of Data Governance, not yet publicly identified)_
-- **Competition:** Informatica IDMC (incumbent — confirmed deployed on Azure for MDM, Data Quality, Data Governance & Catalog)
+- **Competition:** No external MDM competitor — Salesforce IDMC (formerly Informatica) is already deployed. Internal competition: SAP-native data tools within S/4HANA migration programme; 'do nothing / stay on IDMC alone' without adding Data Cloud / MuleSoft / Agentforce
 
 ## Current Data Landscape
 - **MDM:** Informatica IDMC on Microsoft Azure (MDM, Data Quality, Data Governance & Catalog, Data Marketplace) — incumbent, actively being built out
@@ -229,13 +228,13 @@ _(Hypotheses grounded in research. Validate in live discovery. Run `python -m di
 - **Sharpen it next call:** What AI use case are you targeting, and what data would it depend on?
 
 ## ROI & TCO
-_Scenario: **Greenfield (no MDM today)** No MDM in place value is pain elimination vs the cost of a new platform._
+_Scenario: **Expand existing Salesforce / IDMC** Existing Salesforce / IDMC customer adding Data Cloud, MuleSoft, or Agentforce. Value = incremental capability uplift on the existing foundation._
 
 <!-- ROI inputs edit values, then run: python -m discovery_agent roi "<Account>" -->
-- scenario: none    (Estate scenario)
+- scenario: expansion    (Estate scenario)
 - currency: EUR    (Currency)
 - horizon_years: 3    (Horizon (years))
-- current_platform_annual: 0    (Current MDM platform cost / year (legacy or incumbent; 0 if none))
+- current_platform_annual: 0    (Current MDM platform cost / year (legacy, incumbent, or existing IDMC; 0 if none))
 - manual_fte: 0    (FTEs doing manual data work)
 - fte_cost: 90,000    (Loaded cost per FTE / year)
 - manual_reduction_pct: 0.50    (Manual effort MDM removes)
@@ -249,7 +248,20 @@ _Scenario: **Greenfield (no MDM today)** No MDM in place value is pain eliminati
 - sf_implementation_onetime: 0    (Salesforce implementation (one-time))
 
 ### Result
-_(Run `python -m discovery_agent roi "<Account>"` after editing the inputs above.)_
+
+**Annual benefit (quantified pain):**
+- **Total annual benefit:** EUR 0
+
+- Salesforce cost / year: EUR 0
+- Platform savings vs current estate / year: EUR 0
+- **Net benefit / year: EUR 0**
+
+- 3-yr TCO current estate: EUR 0
+- 3-yr TCO with Salesforce: EUR 0
+- **3-yr TCO savings: EUR 0**
+
+- Payback period: n/a (no net benefit)
+- **3-yr ROI: 0%** (net EUR 0 on EUR 0 invested)
 
 ## Discovery Notes
 _(Timestamped notes appended by `python -m discovery_agent note`.)_

@@ -38,7 +38,7 @@ QUESTION_BANK = {
         "questions": [
             "Who owns data quality today is there a data steward or governance team, or is it nobody's job?",
             "How do you decide which value 'wins' when two systems disagree about the same customer?",
-            "Do you have existing MDM or data-quality tooling (Informatica, Reltio, Profisee, in-house)? How's it working?",
+            "Do you have existing MDM or data-quality tooling (Salesforce IDMC, Reltio, Profisee, in-house)? How's it working?",
             "What rules or policies govern how a golden record gets created and maintained?",
             "Do data-residency or digital-sovereignty rules dictate where customer data can be stored (Schrems II, public-sector or sector requirements)?",
         ],
@@ -230,8 +230,8 @@ RESEARCH_TOPICS = [
     {
         "key": "posture",
         "title": "Existing data / MDM posture",
-        "why": "Shows whether it's a competitive displacement (Informatica/Reltio/Profisee) or greenfield.",
-        "sources": ["Job postings (named MDM tools)", "G2 reviews", "Glassdoor"],
+        "why": "Shows whether it's greenfield, competitive displacement (Reltio/Profisee/other), or an existing Salesforce/IDMC customer (expansion play). Note: Informatica IDMC is now Salesforce — accounts running IDMC are existing Salesforce customers.",
+        "sources": ["Job postings (named MDM tools: Salesforce IDMC, Reltio, Profisee)", "G2 reviews", "Glassdoor", "LinkedIn employee skills"],
     },
 ]
 

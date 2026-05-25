@@ -198,7 +198,7 @@ const QUESTION_BANK = {
   governance: { title: "Data Governance & Stewardship", questions: [
     "Who owns data quality today — is there a data steward or governance team, or is it nobody's job?",
     "How do you decide which value 'wins' when two systems disagree about the same customer?",
-    "Do you have existing MDM or data-quality tooling (Informatica, Reltio, Profisee, in-house)? How's it working?",
+    "Do you have existing MDM or data-quality tooling (Salesforce IDMC, Reltio, Profisee, in-house)? How's it working?",
     "What rules or policies govern how a golden record gets created and maintained?",
     "Do data-residency or digital-sovereignty rules dictate where customer data can be stored (Schrems II, public-sector or sector requirements)?" ] },
   matching: { title: "Matching, Survivorship & Identity", questions: [
@@ -283,7 +283,7 @@ const RESEARCH_TOPICS = [
   { title:"Strategic initiatives & recent news", why:"Digital-transformation, AI and data programs create timing and urgency — AI especially needs clean master data.", sources:["Newsroom / press","Earnings calls & investor decks","Executive interviews / blog"] },
   { title:"Regulatory, compliance & data residency", why:"GDPR plus each Nordic DPA (Datatilsynet DK/NO, IMY SE, Data Protection Ombudsman FI) and Schrems II make governance, consent and EU data residency a board-level and procurement-level MDM driver.", sources:["Privacy policy","National DPA (Datatilsynet / IMY / Tietosuoja)","Schrems II / EU data-residency guidance","Industry regulator (e.g. Finanstilsynet)"] },
   { title:"Key people / buying committee", why:"Identifies the likely economic buyer and champion — CDO, CIO, CTO, VP Data, Head of CRM/Marketing Ops.", sources:["LinkedIn","Company leadership page","Conference talks / panels"] },
-  { title:"Existing data / MDM posture", why:"Shows whether it's a competitive displacement (Informatica/Reltio/Profisee) or greenfield.", sources:["Job postings (named MDM tools)","G2 reviews","Glassdoor"] },
+  { title:"Existing data / MDM posture", why:"Shows whether it's greenfield, competitive displacement (Reltio/Profisee/other), or an existing Salesforce/IDMC customer (expansion play). Note: Informatica IDMC is now Salesforce.", sources:["Job postings (named MDM tools: Salesforce IDMC, Reltio, Profisee)","G2 reviews","Glassdoor","LinkedIn employee skills"] },
 ];
 
 // ---------------------------------------------------------------------------
@@ -292,7 +292,8 @@ const RESEARCH_TOPICS = [
 const ROI_SCENARIOS = {
   none: { label:"Greenfield (no MDM today)", desc:"No MDM in place — value is pain elimination vs the cost of a new platform." },
   modernization: { label:"Modernization to cloud", desc:"Replace legacy / on-prem MDM with cloud — value = infra + maintenance savings plus pain reduction." },
-  competitive_takeout: { label:"Competitive take-out", desc:"Displace an incumbent (Informatica / Reltio / Profisee) — value = licence delta plus pain reduction." },
+  competitive_takeout: { label:"Competitive take-out", desc:"Displace an incumbent (Reltio / Profisee / other) — value = licence delta plus pain reduction." },
+  expansion: { label:"Expand existing Salesforce / IDMC", desc:"Existing Salesforce / IDMC customer adding Data Cloud, MuleSoft, or Agentforce. Value = incremental capability uplift on the existing foundation." },
 };
 const ROI_SPECS = [
   {key:"scenario", label:"Estate scenario", kind:"scenario"},

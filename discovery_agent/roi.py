@@ -6,10 +6,15 @@ same pain the discovery agent detects (manual effort, duplicates, compliance/AML
 risk, revenue/marketing) as the benefit side, and compares the cost of the
 current MDM estate against a Salesforce future state.
 
-Three estate scenarios are supported:
+Four estate scenarios are supported:
   - none               : greenfield, no MDM today (benefit = pain elimination)
   - modernization      : replace legacy / on-prem MDM with cloud
-  - competitive_takeout: displace an incumbent (Informatica / Reltio / Profisee)
+  - competitive_takeout: displace an incumbent (Reltio / Profisee / other)
+  - expansion          : existing Salesforce / IDMC customer adding Data Cloud,
+                         MuleSoft, or Agentforce on top of their IDMC foundation
+
+Note: Informatica IDMC is now part of the Salesforce portfolio. Accounts already
+running IDMC are existing Salesforce customers; use the 'expansion' scenario.
 
 Inputs live in the brief's "ROI & TCO" section as `- key: value` lines, so they
 diff in git and can be edited by hand, in the CLI, or in the web UI.
@@ -28,7 +33,11 @@ SCENARIOS = {
     },
     "competitive_takeout": {
         "label": "Competitive take-out",
-        "desc": "Displace an incumbent (Informatica / Reltio / Profisee) value = licence delta plus pain reduction.",
+        "desc": "Displace an incumbent (Reltio / Profisee / other) value = licence delta plus pain reduction.",
+    },
+    "expansion": {
+        "label": "Expand existing Salesforce / IDMC",
+        "desc": "Existing Salesforce / IDMC customer adding Data Cloud, MuleSoft, or Agentforce. Value = incremental capability uplift on the existing foundation.",
     },
 }
 
@@ -37,7 +46,7 @@ INPUT_SPECS = [
     ("scenario", "Estate scenario", "scenario", "none"),
     ("currency", "Currency", "str", "EUR"),
     ("horizon_years", "Horizon (years)", "int", 3),
-    ("current_platform_annual", "Current MDM platform cost / year (legacy or incumbent; 0 if none)", "money", 0),
+    ("current_platform_annual", "Current MDM platform cost / year (legacy, incumbent, or existing IDMC; 0 if none)", "money", 0),
     ("manual_fte", "FTEs doing manual data work", "number", 0),
     ("fte_cost", "Loaded cost per FTE / year", "money", 90000),
     ("manual_reduction_pct", "Manual effort MDM removes", "pct", 0.5),

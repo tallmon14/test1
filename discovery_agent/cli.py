@@ -212,7 +212,7 @@ def build_parser():
 
     ro = sub.add_parser("roi", help="Compute ROI / TCO for an account from its ROI & TCO inputs")
     ro.add_argument("name", help="Account name")
-    ro.add_argument("--scenario", choices=["none", "modernization", "competitive_takeout"],
+    ro.add_argument("--scenario", choices=["none", "modernization", "competitive_takeout", "expansion"],
                     help="Set the estate scenario")
     ro.add_argument("--set", action="append", metavar="key=value",
                     help="Override an ROI input (repeatable), e.g. --set manual_fte=8")

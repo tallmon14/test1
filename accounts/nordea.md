@@ -66,13 +66,13 @@ Four legacy core-banking platforms from the founding banks (FI/SE/DK/NO), plus C
 - **Sharpen it next call:** How many people-hours per week go into manual data cleanup today?
 
 ## ROI & TCO
-_Scenario: **Competitive take-out** Displace an incumbent (Informatica / Reltio / Profisee) value = licence delta plus pain reduction._
+_Scenario: **Competitive take-out** Displace an incumbent (Reltio / Profisee / other) value = licence delta plus pain reduction._
 
 <!-- ROI inputs edit values, then run: python -m discovery_agent roi "<Account>" -->
 - scenario: competitive_takeout    (Estate scenario)
 - currency: EUR    (Currency)
 - horizon_years: 3    (Horizon (years))
-- current_platform_annual: 2,500,000    (Current MDM platform cost / year (legacy or incumbent; 0 if none))
+- current_platform_annual: 2,500,000    (Current MDM platform cost / year (legacy, incumbent, or existing IDMC; 0 if none))
 - manual_fte: 25    (FTEs doing manual data work)
 - fte_cost: 95,000    (Loaded cost per FTE / year)
 - manual_reduction_pct: 0.50    (Manual effort MDM removes)
