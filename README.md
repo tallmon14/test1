@@ -14,13 +14,25 @@ built as a standalone Vite + React + TypeScript single-page app.
 - Plain CSS with design-token CSS variables (light/dark themes, density, accent)
 - No UI framework — components mirror the handoff's structure
 
-## Getting started
+## Run locally
+
+Requires **Node 18+** (built/tested on Node 22).
 
 ```bash
-npm install
-npm run dev        # start the dev server
+# fresh checkout
+git clone https://github.com/tallmon14/test1.git
+cd test1
+git checkout claude/zen-tesla-Psz3v   # or: git pull origin claude/zen-tesla-Psz3v
+
+npm install        # node_modules is gitignored, so this is required
+npm run dev        # open the URL Vite prints (default http://localhost:5173/)
+```
+
+Other scripts:
+
+```bash
 npm run build      # typecheck + production build
-npm run preview    # preview the production build
+npm run preview    # serve the production build (default http://localhost:4173/)
 npm run typecheck  # type-check only
 ```
 
