@@ -40,6 +40,7 @@ QUESTION_BANK = {
             "How do you decide which value 'wins' when two systems disagree about the same customer?",
             "Do you have existing MDM or data-quality tooling (Informatica, Reltio, Profisee, in-house)? How's it working?",
             "What rules or policies govern how a golden record gets created and maintained?",
+            "Do data-residency or digital-sovereignty rules dictate where customer data can be stored (Schrems II, public-sector or sector requirements)?",
         ],
     },
     "matching": {
@@ -49,6 +50,7 @@ QUESTION_BANK = {
             "How do you resolve identity across channels (web visitor, support ticket, CRM contact = same person)?",
             "When records merge, how confident are you that you keep the right data and don't lose history?",
             "Do you need real-time identity resolution (e.g. at point of sale / service) or is overnight batch fine?",
+            "How do you match records across Nordic markets and languages (Danish/Swedish/Norwegian/Finnish names, å/ä/ö/ø characters)?",
         ],
     },
     "exec": {
@@ -108,10 +110,18 @@ PAIN_SIGNALS = [
     },
     {
         "label": "Compliance / privacy / governance risk",
-        "keywords": ["gdpr", "ccpa", "compliance", "privacy", "audit", "regulation", "consent", "pii"],
+        "keywords": ["gdpr", "ccpa", "compliance", "privacy", "audit", "regulation", "consent", "pii", "datatilsynet", "imy"],
         "value": "Centralized governance, consent, and lineage on a trusted profile reduces audit and regulatory exposure.",
         "products": ["Salesforce Data Cloud (governance & consent)", "Privacy Center"],
         "followup": "Which regulations apply, and have data issues ever surfaced in an audit?",
+    },
+    {
+        "label": "Data residency / digital sovereignty (Nordic/EU)",
+        "keywords": ["residency", "sovereignty", "schrems", "data localization", "data localisation",
+                     "in-region", "on-shore", "onshore", "data leaves", "store data in", "eu data", "data sovereignty"],
+        "value": "Keep regulated customer data in-region while still building one governed golden profile addresses EU/Nordic data-sovereignty and public-sector requirements.",
+        "products": ["Salesforce Data Cloud on Hyperforce (EU data residency)", "Privacy Center"],
+        "followup": "Which data must stay in-region, and is that a hard procurement/tender requirement?",
     },
     {
         "label": "Bad data hurting marketing / campaigns",
@@ -165,7 +175,8 @@ RESEARCH_TOPICS = [
         "key": "profile",
         "title": "Company profile & business model",
         "why": "Frames the customer-data problem B2C high-volume vs B2B account-based shapes the MDM scope.",
-        "sources": ["Company website / About page", "LinkedIn company page", "Crunchbase"],
+        "sources": ["Company website / About page", "LinkedIn company page", "Crunchbase",
+                    "Nordic business register (Brønnøysund/NO, Bolagsverket/SE, CVR/DK, PRH/FI)"],
     },
     {
         "key": "industry",
@@ -177,7 +188,7 @@ RESEARCH_TOPICS = [
         "key": "scale",
         "title": "Size & scale (employees, revenue, customers)",
         "why": "A proxy for data volume and system sprawl bigger and more fragmented means more MDM value.",
-        "sources": ["LinkedIn", "Crunchbase", "Annual report / investor relations"],
+        "sources": ["LinkedIn", "Crunchbase", "Annual report / investor relations", "allabolag.se / proff.no / proff.dk"],
     },
     {
         "key": "footprint",
@@ -205,9 +216,10 @@ RESEARCH_TOPICS = [
     },
     {
         "key": "regulatory",
-        "title": "Regulatory & compliance exposure",
-        "why": "GDPR, CCPA, HIPAA, SOX or industry rules make governance, consent and lineage a board-level MDM driver.",
-        "sources": ["Privacy policy", "10-K risk factors", "Industry regulator"],
+        "title": "Regulatory, compliance & data residency",
+        "why": "GDPR plus each Nordic DPA (Datatilsynet DK/NO, IMY SE, Data Protection Ombudsman FI) and Schrems II make governance, consent and EU data residency a board-level and procurement-level MDM driver.",
+        "sources": ["Privacy policy", "National DPA (Datatilsynet / IMY / Tietosuoja)",
+                    "Schrems II / EU data-residency guidance", "Industry regulator (e.g. Finanstilsynet)"],
     },
     {
         "key": "people",
