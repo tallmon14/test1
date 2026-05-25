@@ -145,7 +145,6 @@ PAIN_SIGNALS = [
 
 
 # --- MEDDPICC qualification fields (used for scoring deal readiness) ---
-
 MEDDPICC = [
     ("Metrics", "Quantified business impact of solving the data problem"),
     ("Economic Buyer", "Person with budget authority who feels the pain"),
@@ -156,6 +155,91 @@ MEDDPICC = [
     ("Champion", "Internal advocate selling on your behalf"),
     ("Competition", "Alternatives in play, including 'do nothing'"),
 ]
+
+
+# --- Account research: what public info to gather before discovery, why it
+#     matters for an MDM sale, and where to find it (all public sources) -------
+
+RESEARCH_TOPICS = [
+    {
+        "key": "profile",
+        "title": "Company profile & business model",
+        "why": "Frames the customer-data problem B2C high-volume vs B2B account-based shapes the MDM scope.",
+        "sources": ["Company website / About page", "LinkedIn company page", "Crunchbase"],
+    },
+    {
+        "key": "industry",
+        "title": "Industry & vertical",
+        "why": "Data intensity and regulation vary widely; FSI, healthcare, retail and telco have the strongest MDM need.",
+        "sources": ["Company site", "Industry/SIC classification", "Annual report / 10-K"],
+    },
+    {
+        "key": "scale",
+        "title": "Size & scale (employees, revenue, customers)",
+        "why": "A proxy for data volume and system sprawl bigger and more fragmented means more MDM value.",
+        "sources": ["LinkedIn", "Crunchbase", "Annual report / investor relations"],
+    },
+    {
+        "key": "footprint",
+        "title": "Geographic & business-unit footprint",
+        "why": "Multi-region / multi-BU operations fragment customer data and add residency rules (GDPR/CCPA).",
+        "sources": ["Company 'Locations' page", "10-K segment reporting", "Press releases"],
+    },
+    {
+        "key": "ma",
+        "title": "M&A / acquisition history",
+        "why": "Acquisitions bolt on duplicate systems and overlapping customer data the single biggest MDM trigger.",
+        "sources": ["Press releases / newsroom", "Crunchbase", "Business news"],
+    },
+    {
+        "key": "tech",
+        "title": "Technology & systems signals (CRM/ERP/martech)",
+        "why": "Reveals where master data lives today and the integration scope (MuleSoft) for harmonizing it.",
+        "sources": ["Job postings (named tools)", "Customer case studies", "G2 / BuiltWith", "LinkedIn employee skills"],
+    },
+    {
+        "key": "initiatives",
+        "title": "Strategic initiatives & recent news",
+        "why": "Digital-transformation, AI and data programs create timing and urgency AI especially needs clean master data.",
+        "sources": ["Newsroom / press", "Earnings calls & investor decks", "Executive interviews / blog"],
+    },
+    {
+        "key": "regulatory",
+        "title": "Regulatory & compliance exposure",
+        "why": "GDPR, CCPA, HIPAA, SOX or industry rules make governance, consent and lineage a board-level MDM driver.",
+        "sources": ["Privacy policy", "10-K risk factors", "Industry regulator"],
+    },
+    {
+        "key": "people",
+        "title": "Key people / buying committee",
+        "why": "Identifies the likely economic buyer and champion CDO, CIO, CTO, VP Data, Head of CRM/Marketing Ops.",
+        "sources": ["LinkedIn", "Company leadership page", "Conference talks / panels"],
+    },
+    {
+        "key": "posture",
+        "title": "Existing data / MDM posture",
+        "why": "Shows whether it's a competitive displacement (Informatica/Reltio/Profisee) or greenfield.",
+        "sources": ["Job postings (named MDM tools)", "G2 reviews", "Glassdoor"],
+    },
+]
+
+
+def format_research_checklist():
+    """Printable checklist of what public info to gather and where to find it."""
+    lines = []
+    for i, t in enumerate(RESEARCH_TOPICS, 1):
+        lines.append(f"{i}. {t['title']}")
+        lines.append(f"   Why it matters: {t['why']}")
+        lines.append(f"   Where to look: {', '.join(t['sources'])}")
+        lines.append("")
+    return "\n".join(lines).rstrip()
+
+
+def research_placeholder():
+    """Default body for the Account Research section of a new brief."""
+    return ("_(Public-info research gathered before discovery. Run "
+            "`python -m discovery_agent research \"<Account>\"` for the checklist of "
+            "what to gather and where to find it.)_")
 
 
 def detect_signals(text):

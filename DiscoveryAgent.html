@@ -72,6 +72,7 @@
       <div style="margin-top:10px"><button onclick="createAccount()">Create brief</button></div>
     </div>
     <div class="toolbar" style="margin-bottom:8px">
+      <button class="ghost" onclick="showResearch()">Research checklist</button>
       <button class="ghost" onclick="showQuestions()">Discovery questions</button>
     </div>
     <div class="toolbar" style="margin-bottom:12px">
@@ -91,6 +92,11 @@
         <p class="muted">Everything is saved in this browser. Use <b>Export .md</b> on an account to
         produce a Markdown brief you can drop into your team's git repo.</p>
       </div>
+    </div>
+
+    <div id="researchPanel" class="hide">
+      <h2>Account research checklist</h2>
+      <div id="researchContent" class="card"></div>
     </div>
 
     <div id="questionsPanel" class="hide">
@@ -116,6 +122,9 @@
           <div><label>Owner</label><input id="owner" /></div>
         </div>
       </div>
+
+      <h2>Account research <span class="muted" style="text-transform:none;font-weight:400">— public info gathered before discovery</span></h2>
+      <div class="card"><textarea id="research" style="min-height:120px" placeholder="What you learned from public sources. Click “Research checklist” for what to gather and where to find it."></textarea></div>
 
       <h2>Qualification (MEDDPICC)</h2>
       <div class="card"><div class="meddpicc" id="meddpicc"></div></div>
@@ -248,6 +257,18 @@ const MEDDPICC = [
   ["Champion","Internal advocate selling on your behalf"],
   ["Competition","Alternatives in play, including 'do nothing'"],
 ];
+const RESEARCH_TOPICS = [
+  { title:"Company profile & business model", why:"Frames the customer-data problem — B2C high-volume vs B2B account-based shapes the MDM scope.", sources:["Company website / About page","LinkedIn company page","Crunchbase"] },
+  { title:"Industry & vertical", why:"Data intensity and regulation vary widely; FSI, healthcare, retail and telco have the strongest MDM need.", sources:["Company site","Industry/SIC classification","Annual report / 10-K"] },
+  { title:"Size & scale (employees, revenue, customers)", why:"A proxy for data volume and system sprawl — bigger and more fragmented means more MDM value.", sources:["LinkedIn","Crunchbase","Annual report / investor relations"] },
+  { title:"Geographic & business-unit footprint", why:"Multi-region / multi-BU operations fragment customer data and add residency rules (GDPR/CCPA).", sources:["Company 'Locations' page","10-K segment reporting","Press releases"] },
+  { title:"M&A / acquisition history", why:"Acquisitions bolt on duplicate systems and overlapping customer data — the single biggest MDM trigger.", sources:["Press releases / newsroom","Crunchbase","Business news"] },
+  { title:"Technology & systems signals (CRM/ERP/martech)", why:"Reveals where master data lives today and the integration scope (MuleSoft) for harmonizing it.", sources:["Job postings (named tools)","Customer case studies","G2 / BuiltWith","LinkedIn employee skills"] },
+  { title:"Strategic initiatives & recent news", why:"Digital-transformation, AI and data programs create timing and urgency — AI especially needs clean master data.", sources:["Newsroom / press","Earnings calls & investor decks","Executive interviews / blog"] },
+  { title:"Regulatory & compliance exposure", why:"GDPR, CCPA, HIPAA, SOX or industry rules make governance, consent and lineage a board-level MDM driver.", sources:["Privacy policy","10-K risk factors","Industry regulator"] },
+  { title:"Key people / buying committee", why:"Identifies the likely economic buyer and champion — CDO, CIO, CTO, VP Data, Head of CRM/Marketing Ops.", sources:["LinkedIn","Company leadership page","Conference talks / panels"] },
+  { title:"Existing data / MDM posture", why:"Shows whether it's a competitive displacement (Informatica/Reltio/Profisee) or greenfield.", sources:["Job postings (named MDM tools)","G2 reviews","Glassdoor"] },
+];
 
 // ---------------------------------------------------------------------------
 // State (persisted to localStorage)
@@ -267,7 +288,7 @@ function blankAccount(name, owner){
   const md = {}; MEDDPICC.forEach(([f])=>md[f]="");
   return { name, slug: slugify(name), stage:"Discovery", owner: owner||"",
            created: today(), updated: today(), meddpicc: md,
-           landscape:"", pain:"", next_steps:"", notes:[] };
+           research:"", landscape:"", pain:"", next_steps:"", notes:[] };
 }
 function detectSignals(text){ const t=(text||"").toLowerCase();
   return PAIN_SIGNALS.filter(s => s.keywords.some(k => t.includes(k))); }
@@ -276,7 +297,7 @@ function scoreOf(a){ return MEDDPICC.filter(([f]) => (a.meddpicc[f]||"").trim())
 // ---------------------------------------------------------------------------
 // Rendering
 // ---------------------------------------------------------------------------
-function show(id){ ['welcome','questionsPanel','detail'].forEach(x=>document.getElementById(x).classList.toggle('hide', x!==id)); }
+function show(id){ ['welcome','researchPanel','questionsPanel','detail'].forEach(x=>document.getElementById(x).classList.toggle('hide', x!==id)); }
 
 function renderList(){
   const el = document.getElementById('acctList');
@@ -306,6 +327,7 @@ function renderDetail(){
   document.getElementById('scoreFill').style.width = pct + '%';
   document.getElementById('stage').value = a.stage || 'Discovery';
   document.getElementById('owner').value = a.owner || '';
+  document.getElementById('research').value = a.research || '';
   document.getElementById('landscape').value = a.landscape || '';
   document.getElementById('pain').value = a.pain || '';
   document.getElementById('next_steps').value = a.next_steps || '';
@@ -350,6 +372,7 @@ function createAccount(){
 function collectInto(a){
   a.stage = document.getElementById('stage').value;
   a.owner = document.getElementById('owner').value;
+  a.research = document.getElementById('research').value;
   a.landscape = document.getElementById('landscape').value;
   a.pain = document.getElementById('pain').value;
   a.next_steps = document.getElementById('next_steps').value;
@@ -371,6 +394,13 @@ function deleteAccount(){
   delete state[currentSlug]; persist(); currentSlug=null; show('welcome'); renderList(); toast('Deleted');
 }
 
+function showResearch(){
+  show('researchPanel');
+  document.getElementById('researchContent').innerHTML = RESEARCH_TOPICS.map((t,i) => `
+    <div class="qgroup"><h3>${i+1}. ${esc(t.title)}</h3>
+      <p style="font-size:13px;margin:2px 0"><b>Why it matters:</b> ${esc(t.why)}</p>
+      <p class="muted" style="margin:2px 0"><b>Where to look:</b> ${esc(t.sources.join(', '))}</p></div>`).join('');
+}
 function showQuestions(){ show('questionsPanel'); const sel=document.getElementById('qStage');
   if (!sel.options.length){ Object.keys(STAGE_TO_GROUPS).forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);}); sel.value='discovery'; }
   loadQuestions(); }
@@ -402,6 +432,9 @@ function toMarkdown(a){
 - **Owner:** ${a.owner}
 - **Created:** ${a.created}
 - **Last updated:** ${a.updated}
+
+## Account Research
+${body(a.research)}
 
 ## Qualification (MEDDPICC)
 ${md}
@@ -447,6 +480,7 @@ function parseMarkdown(text){
   a.created = get("Created") || today(); a.updated = get("Last updated") || today();
   MEDDPICC.forEach(([f]) => a.meddpicc[f] = get(f));
   const clean = (b)=>{ b=(b||"").trim(); return (b.startsWith('_(')&&b.endsWith(')_'))?"":b; };
+  a.research = clean(sections["Account Research"]);
   a.landscape = clean(sections["Current Data Landscape"]);
   a.pain = clean(sections["Pain Points"]);
   a.next_steps = clean(sections["Next Steps"]);

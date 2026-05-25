@@ -7,6 +7,9 @@
 - **Created:** 2026-05-25
 - **Last updated:** 2026-05-25
 
+## Account Research
+_(Public-info research gathered before discovery. Run `python -m discovery_agent research "<Account>"` for the checklist of what to gather and where to find it.)_
+
 ## Qualification (MEDDPICC)
 - **Metrics:** _(tbd  Quantified business impact of solving the data problem)_
 - **Economic Buyer:** Dana Lee, VP Data (owns initiative, has budget)

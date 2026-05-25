@@ -45,6 +45,7 @@ def _account_detail(slug):
         "meddpicc": meddpicc,
         "score": {"filled": filled, "total": len(framework.MEDDPICC)},
         "sections": {
+            "research": _clean(sections.get("Account Research", "")),
             "landscape": _clean(sections.get("Current Data Landscape", "")),
             "pain": _clean(sections.get("Pain Points", "")),
             "next_steps": _clean(sections.get("Next Steps", "")),
@@ -109,6 +110,9 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/accounts":
             return self._send_json({"accounts": store.list_accounts()})
 
+        if path == "/api/research":
+            return self._send_json({"topics": framework.RESEARCH_TOPICS})
+
         if path == "/api/questions":
             stage = (parse_qs(parsed.query).get("stage") or ["discovery"])[0]
             groups = framework.STAGE_TO_GROUPS.get(stage)
@@ -172,6 +176,7 @@ class Handler(BaseHTTPRequestHandler):
             name = found[0]
             body = self._read_body()
             section_map = {
+                "Account Research": body.get("sections", {}).get("research"),
                 "Current Data Landscape": body.get("sections", {}).get("landscape"),
                 "Pain Points": body.get("sections", {}).get("pain"),
                 "Next Steps": body.get("sections", {}).get("next_steps"),

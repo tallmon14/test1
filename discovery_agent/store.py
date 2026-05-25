@@ -19,6 +19,7 @@ ACCOUNTS_DIR = Path(__file__).resolve().parent.parent / "accounts"
 # Section headers, in display order.
 SECTIONS = [
     "Snapshot",
+    "Account Research",
     "Qualification (MEDDPICC)",
     "Current Data Landscape",
     "Pain Points",
@@ -54,6 +55,9 @@ def new_brief(name, owner):
 - **Owner:** {owner}
 - **Created:** {today()}
 - **Last updated:** {today()}
+
+## Account Research
+{framework.research_placeholder()}
 
 ## Qualification (MEDDPICC)
 {meddpicc_lines}

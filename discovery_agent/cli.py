@@ -127,6 +127,21 @@ def cmd_brief(args):
     return 0
 
 
+def cmd_research(args):
+    print("Account research checklist  public info to gather before discovery")
+    print("(MDM-focused: each item ties to where master data lives and why it hurts)\n")
+    print(framework.format_research_checklist())
+    if args.name:
+        text = store.read(args.name)
+        if text is None:
+            print(f"\n(No brief for '{args.name}' yet  create it with: "
+                  f"python -m discovery_agent new \"{args.name}\")")
+        else:
+            print(f"\nRecord findings in the 'Account Research' section of "
+                  f"{store.account_path(args.name)}")
+    return 0
+
+
 def cmd_web(args):
     from . import web
     web.serve(args.host, args.port)
@@ -168,6 +183,10 @@ def build_parser():
     br = sub.add_parser("brief", help="Show deal-readiness scorecard for an account")
     br.add_argument("name", help="Account name")
     br.set_defaults(func=cmd_brief)
+
+    rs = sub.add_parser("research", help="Show the public-info research checklist for an account")
+    rs.add_argument("name", nargs="?", help="Optional account name to point findings at")
+    rs.set_defaults(func=cmd_research)
 
     w = sub.add_parser("web", help="Launch the visual web interface in a browser")
     w.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
