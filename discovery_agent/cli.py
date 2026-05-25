@@ -62,34 +62,9 @@ def cmd_note(args):
     if not note:
         print("Nothing to add (empty note).")
         return 1
-    sections = store.parse_sections(text)
-    display = store.display_name(text, args.name)
-    entry = f"- **{store.today()}** {note}"
-    existing = sections.get("Discovery Notes", "").strip()
-    if existing.startswith("_(") or not existing:
-        sections["Discovery Notes"] = entry
-    else:
-        sections["Discovery Notes"] = existing + "\n" + entry
-    new_text = store.set_field(store.render(display, sections), "Last updated", store.today())
-    store.write(args.name, new_text)
+    store.append_note(args.name, note)
     print(f"Added note to {store.account_path(args.name)}")
     return 0
-
-
-def _format_value_map(signals):
-    if not signals:
-        return ("_No pain signals detected yet. Add specifics to the Pain Points "
-                "section (duplicates, single view, compliance, manual cleanup, etc.)._")
-    blocks = []
-    for s in signals:
-        products = ", ".join(s["products"])
-        blocks.append(
-            f"### {s['label']}\n"
-            f"- **Why it matters / MDM value:** {s['value']}\n"
-            f"- **Salesforce fit:** {products}\n"
-            f"- **Sharpen it next call:** {s['followup']}"
-        )
-    return "\n\n".join(blocks)
 
 
 def cmd_map(args):
@@ -97,22 +72,15 @@ def cmd_map(args):
     if text is None:
         print(f"No brief for '{args.name}'. Create it with: python -m discovery_agent new \"{args.name}\"")
         return 1
-    sections = store.parse_sections(text)
-    display = store.display_name(text, args.name)
-    pain = sections.get("Pain Points", "")
-    signals = framework.detect_signals(pain)
-    value_map = _format_value_map(signals)
-
     if args.dry_run:
-        print(f"Value mapping for {display}:\n")
-        print(value_map)
+        sections = store.parse_sections(text)
+        signals = framework.detect_signals(sections.get("Pain Points", ""))
+        print(f"Value mapping for {store.display_name(text, args.name)}:\n")
+        print(framework.format_value_map(signals))
         return 0
 
-    sections["MDM Value Mapping"] = value_map
-    new_text = store.set_field(store.render(display, sections), "Last updated", store.today())
-    store.write(args.name, new_text)
-    hits = len(signals)
-    print(f"Updated MDM Value Mapping in {store.account_path(args.name)} ({hits} signal(s) mapped).")
+    _, signals = store.apply_map(args.name)
+    print(f"Updated MDM Value Mapping in {store.account_path(args.name)} ({len(signals)} signal(s) mapped).")
     return 0
 
 
@@ -159,6 +127,12 @@ def cmd_brief(args):
     return 0
 
 
+def cmd_web(args):
+    from . import web
+    web.serve(args.host, args.port)
+    return 0
+
+
 def build_parser():
     p = argparse.ArgumentParser(
         prog="discovery_agent",
@@ -194,6 +168,11 @@ def build_parser():
     br = sub.add_parser("brief", help="Show deal-readiness scorecard for an account")
     br.add_argument("name", help="Account name")
     br.set_defaults(func=cmd_brief)
+
+    w = sub.add_parser("web", help="Launch the visual web interface in a browser")
+    w.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
+    w.add_argument("--port", type=int, default=8765, help="Port (default: 8765)")
+    w.set_defaults(func=cmd_web)
 
     return p
 

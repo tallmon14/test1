@@ -166,3 +166,20 @@ def detect_signals(text):
         if any(kw in lowered for kw in signal["keywords"]):
             hits.append(signal)
     return hits
+
+
+def format_value_map(signals):
+    """Render detected signals as the Markdown body of the value-map section."""
+    if not signals:
+        return ("_No pain signals detected yet. Add specifics to the Pain Points "
+                "section (duplicates, single view, compliance, manual cleanup, etc.)._")
+    blocks = []
+    for s in signals:
+        products = ", ".join(s["products"])
+        blocks.append(
+            f"### {s['label']}\n"
+            f"- **Why it matters / MDM value:** {s['value']}\n"
+            f"- **Salesforce fit:** {products}\n"
+            f"- **Sharpen it next call:** {s['followup']}"
+        )
+    return "\n\n".join(blocks)

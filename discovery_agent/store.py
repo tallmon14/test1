@@ -137,8 +137,87 @@ def get_field(text, field):
 
 def set_field(text, field, value):
     pattern = rf"^(-\s+\*\*{re.escape(field)}:\*\*).*$"
-    repl = rf"\1 {value}"
-    return re.sub(pattern, repl, text, count=1, flags=re.MULTILINE)
+    # Use a function replacement so arbitrary user text (backslashes, \1, etc.)
+    # is never interpreted as a regex backreference.
+    value = (value or "").replace("\n", " ").strip()
+    return re.sub(pattern, lambda m: f"{m.group(1)} {value}", text,
+                  count=1, flags=re.MULTILINE)
+
+
+SLUG_RE = re.compile(r"^[a-z0-9-]+$")
+
+
+def find_by_slug(slug):
+    """Safely resolve a slug to (display_name, text) or None. Prevents traversal."""
+    if not slug or not SLUG_RE.match(slug):
+        return None
+    path = ACCOUNTS_DIR / f"{slug}.md"
+    if not path.exists():
+        return None
+    text = path.read_text(encoding="utf-8")
+    return display_name(text, slug), text
+
+
+def append_note(name, note):
+    """Append a timestamped note to Discovery Notes. Returns new text or None."""
+    text = read(name)
+    if text is None:
+        return None
+    note = (note or "").strip()
+    if not note:
+        return text
+    sections = parse_sections(text)
+    display = display_name(text, name)
+    entry = f"- **{today()}** {note}"
+    existing = sections.get("Discovery Notes", "").strip()
+    if existing.startswith("_(") or not existing:
+        sections["Discovery Notes"] = entry
+    else:
+        sections["Discovery Notes"] = existing + "\n" + entry
+    new_text = set_field(render(display, sections), "Last updated", today())
+    write(name, new_text)
+    return new_text
+
+
+def apply_map(name):
+    """Regenerate the MDM Value Mapping from Pain Points. Returns (text, signals)."""
+    text = read(name)
+    if text is None:
+        return None, None
+    sections = parse_sections(text)
+    display = display_name(text, name)
+    signals = framework.detect_signals(sections.get("Pain Points", ""))
+    sections["MDM Value Mapping"] = framework.format_value_map(signals)
+    new_text = set_field(render(display, sections), "Last updated", today())
+    write(name, new_text)
+    return new_text, signals
+
+
+def save_brief(name, stage=None, owner=None, meddpicc=None, sections=None):
+    """Update editable parts of a brief. Returns new text or None if missing."""
+    text = read(name)
+    if text is None:
+        return None
+    if sections:
+        parsed = parse_sections(text)
+        display = display_name(text, name)
+        for key, body in sections.items():
+            if key in SECTIONS:
+                parsed[key] = body.strip("\n")
+        text = render(display, parsed)
+    if stage is not None:
+        text = set_field(text, "Stage", stage)
+    if owner is not None:
+        text = set_field(text, "Owner", owner)
+    if meddpicc:
+        hints = dict(framework.MEDDPICC)
+        for field, val in meddpicc.items():
+            if field in hints:
+                v = (val or "").strip()
+                text = set_field(text, field, v if v else f"_(tbd  {hints[field]})_")
+    text = set_field(text, "Last updated", today())
+    write(name, text)
+    return text
 
 
 def list_accounts():

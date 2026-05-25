@@ -12,7 +12,21 @@ and map the customer's pain to MDM value and the right Salesforce products
 
 No dependencies, no API keys pure Python 3 standard library.
 
-## Quick start
+## Visual interface (recommended)
+
+Prefer clicking to typing? Launch the built-in web UI no install, no build step:
+
+```bash
+python3 -m discovery_agent web
+```
+
+It opens `http://127.0.0.1:8765` in your browser. From there you can create
+accounts, fill in MEDDPICC and pain points, generate the MDM value mapping with
+one click, add notes, and watch the deal-readiness score update live. Everything
+you do writes to the same `accounts/*.md` files the CLI uses, so the UI and
+command line stay perfectly in sync (and your team still reviews insights via git).
+
+## Quick start (CLI)
 
 ```bash
 # 1. See tailored MDM discovery questions for your next call
@@ -47,6 +61,7 @@ python3 -m discovery_agent list
 | `note "<Account>" "text"` | Appends a timestamped insight to **Discovery Notes**. |
 | `brief "<Account>"` | Shows a MEDDPICC qualification scorecard, detected value drivers, and a suggested next move. |
 | `list` | Lists all tracked accounts with stage and MEDDPICC score. |
+| `web [--host H] [--port P]` | Launches the visual web interface in your browser. |
 
 ## The account brief
 

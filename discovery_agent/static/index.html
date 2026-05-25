@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MDM Discovery Agent</title>
+<style>
+  :root {
+    --blue: #0176d3;
+    --blue-dark: #014486;
+    --bg: #f3f6f9;
+    --panel: #ffffff;
+    --border: #d8dde6;
+    --text: #16325c;
+    --muted: #5e6d82;
+    --good: #2e844a;
+    --warn: #fe9339;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text);
+  }
+  header {
+    background: linear-gradient(90deg, var(--blue-dark), var(--blue));
+    color: #fff; padding: 14px 22px; display: flex; align-items: center; gap: 12px;
+  }
+  header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+  header .tag { font-size: 12px; opacity: .85; }
+  .layout { display: flex; height: calc(100vh - 52px); }
+  aside {
+    width: 320px; background: var(--panel); border-right: 1px solid var(--border);
+    overflow-y: auto; padding: 16px;
+  }
+  main { flex: 1; overflow-y: auto; padding: 22px 28px; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 22px 0 10px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; margin-bottom: 16px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; font-weight: 600; }
+  input, select, textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+    font: inherit; color: var(--text); background: #fff;
+  }
+  textarea { resize: vertical; min-height: 84px; }
+  button {
+    background: var(--blue); color: #fff; border: none; border-radius: 6px;
+    padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer;
+  }
+  button:hover { background: var(--blue-dark); }
+  button.ghost { background: #fff; color: var(--blue); border: 1px solid var(--blue); }
+  button.ghost:hover { background: #eef6fd; }
+  .acct {
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px;
+    cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  }
+  .acct:hover { border-color: var(--blue); }
+  .acct.active { border-color: var(--blue); background: #eef6fd; }
+  .acct .nm { font-weight: 600; font-size: 14px; }
+  .acct .meta { font-size: 11px; color: var(--muted); }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #e5edf6; color: var(--blue-dark); white-space: nowrap; }
+  .badge.full { background: #ddf0e2; color: var(--good); }
+  .row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 180px; }
+  .meddpicc { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+  .field-mark { font-size: 11px; margin-left: 6px; }
+  .mark-on { color: var(--good); }
+  .mark-off { color: var(--muted); }
+  .signal { border-left: 3px solid var(--blue); padding: 8px 12px; margin-bottom: 10px; background: #f8fbfe; border-radius: 0 6px 6px 0; }
+  .signal h4 { margin: 0 0 4px; font-size: 14px; }
+  .signal p { margin: 3px 0; font-size: 13px; }
+  .signal .prod { color: var(--blue-dark); font-weight: 600; }
+  .note { font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+  .muted { color: var(--muted); font-size: 13px; }
+  .scorebar { height: 8px; background: #e5edf6; border-radius: 999px; overflow: hidden; margin-top: 6px; }
+  .scorebar > div { height: 100%; background: var(--good); }
+  .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .qgroup h3 { font-size: 14px; margin: 14px 0 6px; color: var(--blue-dark); }
+  .qgroup ol { margin: 0; padding-left: 20px; }
+  .qgroup li { font-size: 13px; margin: 4px 0; }
+  .hide { display: none; }
+  .toast { position: fixed; bottom: 18px; right: 18px; background: var(--text); color: #fff;
+    padding: 10px 16px; border-radius: 6px; font-size: 13px; opacity: 0; transition: opacity .2s; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>MDM Discovery Agent</h1>
+  <span class="tag">Salesforce account discovery &rarr; closed Master Data Management deal</span>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="card">
+      <label>New account</label>
+      <input id="newName" placeholder="Account name (e.g. Acme Corp)" />
+      <label>Owner (optional)</label>
+      <input id="newOwner" placeholder="you@salesforce.com" />
+      <div style="margin-top:10px"><button onclick="createAccount()">Create brief</button></div>
+    </div>
+    <div class="toolbar" style="margin-bottom:12px">
+      <button class="ghost" onclick="showQuestions()">Discovery questions</button>
+    </div>
+    <h2>Accounts</h2>
+    <div id="acctList"><p class="muted">Loading…</p></div>
+  </aside>
+
+  <main>
+    <div id="welcome">
+      <h2>Get started</h2>
+      <div class="card">
+        <p class="muted">Create an account on the left, or pick one to capture discovery insights,
+        map pain to MDM value, and track deal readiness (MEDDPICC).</p>
+      </div>
+    </div>
+
+    <!-- Questions panel -->
+    <div id="questionsPanel" class="hide">
+      <div class="toolbar">
+        <h2 style="margin:0">Discovery questions</h2>
+        <select id="qStage" onchange="loadQuestions()" style="width:auto"></select>
+      </div>
+      <div id="qContent" class="card"></div>
+    </div>
+
+    <!-- Account detail -->
+    <div id="detail" class="hide">
+      <div class="toolbar">
+        <h2 id="acctTitle" style="margin:0"></h2>
+        <span id="scoreBadge" class="badge"></span>
+      </div>
+      <div class="scorebar"><div id="scoreFill"></div></div>
+
+      <div class="card">
+        <div class="row">
+          <div>
+            <label>Stage</label>
+            <select id="stage">
+              <option>Discovery</option><option>Qualification</option>
+              <option>Proposal</option><option>Negotiation</option>
+              <option>Closed Won</option><option>Closed Lost</option>
+            </select>
+          </div>
+          <div>
+            <label>Owner</label>
+            <input id="owner" />
+          </div>
+        </div>
+      </div>
+
+      <h2>Qualification (MEDDPICC)</h2>
+      <div class="card"><div class="meddpicc" id="meddpicc"></div></div>
+
+      <h2>Current data landscape</h2>
+      <div class="card"><textarea id="landscape"></textarea></div>
+
+      <h2>Pain points</h2>
+      <div class="card">
+        <textarea id="pain" placeholder="One pain per line — e.g. duplicate records across CRM and ERP, manual cleanup, failed campaigns…"></textarea>
+        <div style="margin-top:10px" class="toolbar">
+          <button onclick="runMap()">Generate MDM value mapping</button>
+          <span class="muted">Maps what you heard to MDM value &amp; Salesforce products.</span>
+        </div>
+      </div>
+
+      <h2>MDM value mapping</h2>
+      <div class="card" id="signals"></div>
+
+      <h2>Discovery notes</h2>
+      <div class="card">
+        <div id="notes"></div>
+        <label>Add a note</label>
+        <div class="toolbar">
+          <input id="noteText" placeholder="What did you learn?" style="flex:1" />
+          <button onclick="addNote()">Add</button>
+        </div>
+      </div>
+
+      <h2>Next steps</h2>
+      <div class="card"><textarea id="next_steps"></textarea></div>
+
+      <div class="toolbar" style="margin-bottom:40px">
+        <button onclick="saveBrief()">Save brief</button>
+        <span class="muted">Snapshot, MEDDPICC, landscape, pain &amp; next steps.</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let currentSlug = null;
+
+function esc(s){ return (s||"").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+async function api(method, url, body){
+  const opt = { method, headers: {} };
+  if (body){ opt.headers['Content-Type']='application/json'; opt.body=JSON.stringify(body); }
+  const r = await fetch(url, opt);
+  const data = await r.json().catch(()=>({}));
+  if (!r.ok) throw new Error(data.error || ('HTTP '+r.status));
+  return data;
+}
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+async function loadAccounts(){
+  const data = await api('GET','/api/accounts');
+  const el = document.getElementById('acctList');
+  if (!data.accounts.length){ el.innerHTML = '<p class="muted">No accounts yet.</p>'; return; }
+  el.innerHTML = '';
+  data.accounts.forEach(a => {
+    const slug = a.file.replace(/\.md$/,'');
+    const full = a.meddpicc_filled === a.meddpicc_total;
+    const div = document.createElement('div');
+    div.className = 'acct' + (slug===currentSlug ? ' active':'');
+    div.onclick = () => selectAccount(slug);
+    div.innerHTML = `<div><div class="nm">${esc(a.name)}</div>
+        <div class="meta">${esc(a.stage)}</div></div>
+        <span class="badge ${full?'full':''}">${a.meddpicc_filled}/${a.meddpicc_total}</span>`;
+    el.appendChild(div);
+  });
+}
+
+function show(id){ ['welcome','questionsPanel','detail'].forEach(x=>document.getElementById(x).classList.toggle('hide', x!==id)); }
+
+async function selectAccount(slug){
+  currentSlug = slug;
+  const d = await api('GET','/api/accounts/'+slug);
+  renderDetail(d);
+  show('detail');
+  loadAccounts();
+}
+
+function renderDetail(d){
+  document.getElementById('acctTitle').textContent = d.name;
+  const pct = Math.round(100*d.score.filled/d.score.total);
+  const sb = document.getElementById('scoreBadge');
+  sb.textContent = `MEDDPICC ${d.score.filled}/${d.score.total}`;
+  sb.className = 'badge' + (d.score.filled===d.score.total?' full':'');
+  document.getElementById('scoreFill').style.width = pct + '%';
+
+  document.getElementById('stage').value = d.snapshot.stage || 'Discovery';
+  document.getElementById('owner').value = d.snapshot.owner || '';
+  document.getElementById('landscape').value = d.sections.landscape || '';
+  document.getElementById('pain').value = d.sections.pain || '';
+  document.getElementById('next_steps').value = d.sections.next_steps || '';
+
+  // MEDDPICC inputs
+  const m = document.getElementById('meddpicc');
+  m.innerHTML = '';
+  d.meddpicc.forEach(f => {
+    const wrap = document.createElement('div');
+    const on = !!f.value;
+    wrap.innerHTML = `<label>${esc(f.field)}
+        <span class="field-mark ${on?'mark-on':'mark-off'}">${on?'✓':'○'}</span></label>`;
+    const inp = document.createElement('input');
+    inp.value = f.value || '';
+    inp.placeholder = f.hint;
+    inp.dataset.field = f.field;
+    inp.className = 'meddpicc-input';
+    wrap.appendChild(inp);
+    m.appendChild(wrap);
+  });
+
+  // signals
+  const sig = document.getElementById('signals');
+  if (!d.signals.length){
+    sig.innerHTML = '<p class="muted">No value drivers detected yet. Fill in pain points and click “Generate MDM value mapping”.</p>';
+  } else {
+    sig.innerHTML = d.signals.map(s => `
+      <div class="signal">
+        <h4>${esc(s.label)}</h4>
+        <p>${esc(s.value)}</p>
+        <p class="prod">Salesforce fit: ${esc(s.products.join(', '))}</p>
+        <p class="muted">Ask next: ${esc(s.followup)}</p>
+      </div>`).join('');
+  }
+
+  // notes
+  const n = document.getElementById('notes');
+  const notes = (d.sections.notes||'').split('\n').filter(x=>x.trim());
+  n.innerHTML = notes.length ? notes.map(x=>`<div class="note">${esc(x.replace(/^- /,''))}</div>`).join('')
+                             : '<p class="muted">No notes yet.</p>';
+}
+
+async function createAccount(){
+  const name = document.getElementById('newName').value.trim();
+  const owner = document.getElementById('newOwner').value.trim();
+  if (!name){ toast('Enter an account name'); return; }
+  try {
+    const r = await api('POST','/api/accounts',{name, owner});
+    document.getElementById('newName').value=''; document.getElementById('newOwner').value='';
+    await loadAccounts();
+    selectAccount(r.slug);
+    toast('Brief created');
+  } catch(e){ toast(e.message); }
+}
+
+async function saveBrief(){
+  const meddpicc = {};
+  document.querySelectorAll('.meddpicc-input').forEach(i => meddpicc[i.dataset.field] = i.value);
+  const body = {
+    stage: document.getElementById('stage').value,
+    owner: document.getElementById('owner').value,
+    meddpicc,
+    sections: {
+      landscape: document.getElementById('landscape').value,
+      pain: document.getElementById('pain').value,
+      next_steps: document.getElementById('next_steps').value,
+    }
+  };
+  const d = await api('PUT','/api/accounts/'+currentSlug, body);
+  renderDetail(d); loadAccounts(); toast('Saved');
+}
+
+async function runMap(){
+  // persist pain first so the mapping reflects the latest text
+  await saveBrief();
+  const d = await api('POST','/api/accounts/'+currentSlug+'/map', {});
+  renderDetail(d); toast(d.signals.length + ' value driver(s) mapped');
+}
+
+async function addNote(){
+  const txt = document.getElementById('noteText').value.trim();
+  if (!txt){ return; }
+  const d = await api('POST','/api/accounts/'+currentSlug+'/note', {text: txt});
+  document.getElementById('noteText').value='';
+  renderDetail(d); toast('Note added');
+}
+
+async function showQuestions(){ show('questionsPanel'); await loadQuestions(true); }
+async function loadQuestions(init){
+  const sel = document.getElementById('qStage');
+  const stage = init===true ? (sel.value||'discovery') : sel.value;
+  const d = await api('GET','/api/questions?stage='+encodeURIComponent(stage));
+  if (init===true && !sel.options.length){
+    d.stages.forEach(s => { const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
+    sel.value = d.stage;
+  }
+  document.getElementById('qContent').innerHTML = d.groups.map(g => `
+    <div class="qgroup"><h3>${esc(g.title)}</h3>
+      <ol>${g.questions.map(q=>`<li>${esc(q)}</li>`).join('')}</ol></div>`).join('');
+}
+
+document.getElementById('noteText') && document.getElementById('noteText');
+loadAccounts();
+</script>
+</body>
+</html>
