@@ -1,0 +1,170 @@
+:root {
+  --bg: #f5f4f0;
+  --panel: #ffffff;
+  --ink: #14110d;
+  --ink-2: #4b463e;
+  --ink-3: #8b8579;
+  --line: #e6e2d8;
+  --line-2: #efece4;
+  --accent: #6a3df5;
+  --accent-soft: #efeaff;
+  --warn: #c2510a;
+  --warn-soft: #fbe9d6;
+  --ok: #2f7a4d;
+  --ok-soft: #e0efe3;
+  --bad: #b13438;
+  --bad-soft: #fadddd;
+
+  /* Agent panel — always dark */
+  --agent-bg: #161311;
+  --agent-ink: #f4efe6;
+  --agent-ink-2: #a59f93;
+  --agent-line: #2a2622;
+  --agent-accent: #c9b8ff;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+  --density-row: 36px;
+  --density-pad: 14px;
+
+  --font-ui: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Fraunces", serif;
+}
+
+[data-density="compact"] {
+  --density-row: 30px;
+  --density-pad: 10px;
+}
+
+[data-theme="dark"] {
+  --bg: #0f0d0b;
+  --panel: #181512;
+  --ink: #f4efe6;
+  --ink-2: #c9c2b3;
+  --ink-3: #837d70;
+  --line: #2a2622;
+  --line-2: #221e1a;
+  --accent: #b89dff;
+  --accent-soft: #2a2237;
+  --warn-soft: #3a2614;
+  --ok-soft: #1c2e22;
+  --bad-soft: #3a1d1d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+.serif {
+  font-family: var(--font-display);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-3);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---- Animations ---- */
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+.caret {
+  display: inline-block;
+  width: 7px;
+  height: 13px;
+  background: currentColor;
+  vertical-align: -2px;
+  margin-left: 2px;
+  animation: blink 1s steps(2) infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: 200px 0;
+  }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(106, 61, 245, 0.08) 50%,
+    transparent 100%
+  );
+  background-size: 200px 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-up {
+  animation: fadeUp 320ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up,
+  .caret,
+  .shimmer {
+    animation: none;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
