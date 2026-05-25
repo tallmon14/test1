@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MDM Discovery Agent</title>
+<style>
+  :root {
+    --blue: #0176d3; --blue-dark: #014486; --bg: #f3f6f9; --panel: #fff;
+    --border: #d8dde6; --text: #16325c; --muted: #5e6d82; --good: #2e844a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); }
+  header { background: linear-gradient(90deg, var(--blue-dark), var(--blue)); color: #fff; padding: 14px 22px; display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+  header .tag { font-size: 12px; opacity: .85; }
+  .layout { display: flex; height: calc(100vh - 52px); }
+  aside { width: 320px; background: var(--panel); border-right: 1px solid var(--border); overflow-y: auto; padding: 16px; }
+  main { flex: 1; overflow-y: auto; padding: 22px 28px; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 22px 0 10px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; margin-bottom: 16px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; font-weight: 600; }
+  input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font: inherit; color: var(--text); background: #fff; }
+  textarea { resize: vertical; min-height: 84px; }
+  button { background: var(--blue); color: #fff; border: none; border-radius: 6px; padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+  button:hover { background: var(--blue-dark); }
+  button.ghost { background: #fff; color: var(--blue); border: 1px solid var(--blue); }
+  button.ghost:hover { background: #eef6fd; }
+  button.danger { background: #fff; color: #ba0517; border: 1px solid #ba0517; }
+  .acct { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .acct:hover { border-color: var(--blue); }
+  .acct.active { border-color: var(--blue); background: #eef6fd; }
+  .acct .nm { font-weight: 600; font-size: 14px; }
+  .acct .meta { font-size: 11px; color: var(--muted); }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #e5edf6; color: var(--blue-dark); white-space: nowrap; }
+  .badge.full { background: #ddf0e2; color: var(--good); }
+  .row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 180px; }
+  .meddpicc { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+  .field-mark { font-size: 11px; margin-left: 6px; }
+  .mark-on { color: var(--good); } .mark-off { color: var(--muted); }
+  .signal { border-left: 3px solid var(--blue); padding: 8px 12px; margin-bottom: 10px; background: #f8fbfe; border-radius: 0 6px 6px 0; }
+  .signal h4 { margin: 0 0 4px; font-size: 14px; }
+  .signal p { margin: 3px 0; font-size: 13px; }
+  .signal .prod { color: var(--blue-dark); font-weight: 600; }
+  .note { font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+  .muted { color: var(--muted); font-size: 13px; }
+  .scorebar { height: 8px; background: #e5edf6; border-radius: 999px; overflow: hidden; margin-top: 6px; }
+  .scorebar > div { height: 100%; background: var(--good); }
+  .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .qgroup h3 { font-size: 14px; margin: 14px 0 6px; color: var(--blue-dark); }
+  .qgroup ol { margin: 0; padding-left: 20px; }
+  .qgroup li { font-size: 13px; margin: 4px 0; }
+  .hide { display: none; }
+  .toast { position: fixed; bottom: 18px; right: 18px; background: var(--text); color: #fff; padding: 10px 16px; border-radius: 6px; font-size: 13px; opacity: 0; transition: opacity .2s; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>MDM Discovery Agent</h1>
+  <span class="tag">Salesforce account discovery &rarr; closed Master Data Management deal &nbsp;|&nbsp; runs entirely in your browser</span>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="card">
+      <label>New account</label>
+      <input id="newName" placeholder="Account name (e.g. Acme Corp)" />
+      <label>Owner (optional)</label>
+      <input id="newOwner" placeholder="you@salesforce.com" />
+      <div style="margin-top:10px"><button onclick="createAccount()">Create brief</button></div>
+    </div>
+    <div class="toolbar" style="margin-bottom:8px">
+      <button class="ghost" onclick="showQuestions()">Discovery questions</button>
+    </div>
+    <div class="toolbar" style="margin-bottom:12px">
+      <button class="ghost" onclick="importFile()">Import .md</button>
+      <input id="fileInput" type="file" accept=".md,text/markdown" class="hide" />
+    </div>
+    <h2>Accounts</h2>
+    <div id="acctList"></div>
+  </aside>
+
+  <main>
+    <div id="welcome">
+      <h2>Get started</h2>
+      <div class="card">
+        <p class="muted">Create an account on the left, or pick one to capture discovery insights,
+        map pain to MDM value, and track deal readiness (MEDDPICC).</p>
+        <p class="muted">Everything is saved in this browser. Use <b>Export .md</b> on an account to
+        produce a Markdown brief you can drop into your team's git repo.</p>
+      </div>
+    </div>
+
+    <div id="questionsPanel" class="hide">
+      <div class="toolbar"><h2 style="margin:0">Discovery questions</h2>
+        <select id="qStage" onchange="loadQuestions()" style="width:auto"></select></div>
+      <div id="qContent" class="card"></div>
+    </div>
+
+    <div id="detail" class="hide">
+      <div class="toolbar">
+        <h2 id="acctTitle" style="margin:0"></h2>
+        <span id="scoreBadge" class="badge"></span>
+      </div>
+      <div class="scorebar"><div id="scoreFill"></div></div>
+
+      <div class="card">
+        <div class="row">
+          <div><label>Stage</label>
+            <select id="stage">
+              <option>Discovery</option><option>Qualification</option><option>Proposal</option>
+              <option>Negotiation</option><option>Closed Won</option><option>Closed Lost</option>
+            </select></div>
+          <div><label>Owner</label><input id="owner" /></div>
+        </div>
+      </div>
+
+      <h2>Qualification (MEDDPICC)</h2>
+      <div class="card"><div class="meddpicc" id="meddpicc"></div></div>
+
+      <h2>Current data landscape</h2>
+      <div class="card"><textarea id="landscape"></textarea></div>
+
+      <h2>Pain points</h2>
+      <div class="card">
+        <textarea id="pain" placeholder="One pain per line — e.g. duplicate records across CRM and ERP, manual cleanup, failed campaigns…"></textarea>
+        <div style="margin-top:10px" class="toolbar">
+          <button onclick="runMap()">Generate MDM value mapping</button>
+          <span class="muted">Maps what you heard to MDM value &amp; Salesforce products.</span>
+        </div>
+      </div>
+
+      <h2>MDM value mapping</h2>
+      <div class="card" id="signals"></div>
+
+      <h2>Discovery notes</h2>
+      <div class="card">
+        <div id="notes"></div>
+        <label>Add a note</label>
+        <div class="toolbar">
+          <input id="noteText" placeholder="What did you learn?" style="flex:1" />
+          <button onclick="addNote()">Add</button>
+        </div>
+      </div>
+
+      <h2>Next steps</h2>
+      <div class="card"><textarea id="next_steps"></textarea></div>
+
+      <div class="toolbar" style="margin-bottom:40px">
+        <button onclick="saveBrief()">Save</button>
+        <button class="ghost" onclick="exportMd()">Export .md</button>
+        <button class="danger" onclick="deleteAccount()">Delete</button>
+        <span class="muted">Saved automatically in this browser; export to share via git.</span>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Embedded MDM discovery framework (mirrors discovery_agent/framework.py)
+// ---------------------------------------------------------------------------
+const QUESTION_BANK = {
+  landscape: { title: "Data Landscape (where customer data lives today)", questions: [
+    "How many systems hold customer or account data today (CRM, ERP, marketing, support, billing, e-commerce)?",
+    "Which system do people treat as the 'source of truth' for a customer? Does everyone agree?",
+    "How does data move between those systems today — batch, real-time, manual exports?",
+    "Roughly how many customer/account records are we talking about, and how fast is that growing?",
+    "Are you operating across multiple regions or business units with their own data stores?" ] },
+  pain: { title: "Business Pain (the cost of bad master data)", questions: [
+    "Where do duplicate or conflicting records bite you today — sales, marketing, service, finance?",
+    "Has bad data ever caused a campaign to misfire or a customer to get the wrong message?",
+    "How much time do reps or analysts spend reconciling or cleaning data manually each week?",
+    "Can you produce a single, trustworthy view of a customer on demand today? What happens when you can't?",
+    "Have data issues created compliance exposure (GDPR/CCPA), audit findings, or reporting you couldn't trust?" ] },
+  governance: { title: "Data Governance & Stewardship", questions: [
+    "Who owns data quality today — is there a data steward or governance team, or is it nobody's job?",
+    "How do you decide which value 'wins' when two systems disagree about the same customer?",
+    "Do you have existing MDM or data-quality tooling (Informatica, Reltio, Profisee, in-house)? How's it working?",
+    "What rules or policies govern how a golden record gets created and maintained?" ] },
+  matching: { title: "Matching, Survivorship & Identity", questions: [
+    "How do you dedupe and merge records today — manual review, fuzzy matching, something custom?",
+    "How do you resolve identity across channels (web visitor, support ticket, CRM contact = same person)?",
+    "When records merge, how confident are you that you keep the right data and don't lose history?",
+    "Do you need real-time identity resolution (e.g. at point of sale / service) or is overnight batch fine?" ] },
+  exec: { title: "Executive / Economic Buyer (business outcomes & MEDDPICC)", questions: [
+    "What business metric does fixing this move — pipeline accuracy, campaign ROI, service efficiency, churn?",
+    "Who feels this pain at the executive level, and what's it worth to them to solve it this year?",
+    "If we delivered a trusted single customer view, what does that unlock for the business?",
+    "What's the cost of doing nothing for another year?",
+    "Who needs to be involved to evaluate and approve a solution like this, and what's the process?" ] },
+  technical: { title: "Technical / Integration", questions: [
+    "What integration approach do you use today across these systems? Any iPaaS / ETL in place?",
+    "Do you need to harmonize data without ripping out source systems (leave them as systems of entry)?",
+    "What are your data residency, security, and PII handling requirements?",
+    "Are you exploring AI/analytics on this data? Clean master data is the prerequisite — is that on the roadmap?" ] },
+};
+const STAGE_TO_GROUPS = {
+  discovery: ["landscape","pain","governance"],
+  technical: ["matching","technical","landscape"],
+  exec: ["exec","pain"],
+  all: ["landscape","pain","governance","matching","exec","technical"],
+};
+const PAIN_SIGNALS = [
+  { label:"Duplicate / conflicting records", keywords:["duplicate","dupe","conflicting","merge","dedupe","multiple records","same customer"],
+    value:"A golden-record engine with configurable matching & survivorship rules collapses duplicates into one trusted profile.",
+    products:["Salesforce Data Cloud (identity resolution)","Duplicate Management rules"],
+    followup:"How many duplicates do you estimate exist, and what does each one cost you downstream?" },
+  { label:"No single customer view / Customer 360", keywords:["single view","360","single source of truth","source of truth","unified","one view","fragmented"],
+    value:"Unify fragmented data into one harmonized profile so every team sees the same customer.",
+    products:["Salesforce Data Cloud","Customer 360"],
+    followup:"Which teams most need that unified view first, and what decision are they making with it?" },
+  { label:"Integration / many disconnected systems", keywords:["integration","systems don't talk","silos","silo","etl"," erp","disconnected","sync"],
+    value:"Connect source systems and harmonize them without ripping anything out — source systems stay as systems of entry.",
+    products:["MuleSoft","Salesforce Data Cloud"],
+    followup:"Which integrations are most painful or brittle today?" },
+  { label:"Compliance / privacy / governance risk", keywords:["gdpr","ccpa","compliance","privacy","audit","regulation","consent","pii"],
+    value:"Centralized governance, consent, and lineage on a trusted profile reduces audit and regulatory exposure.",
+    products:["Salesforce Data Cloud (governance & consent)","Privacy Center"],
+    followup:"Which regulations apply, and have data issues ever surfaced in an audit?" },
+  { label:"Bad data hurting marketing / campaigns", keywords:["campaign","marketing","wrong message","bounce","segmentation","targeting","personaliz"],
+    value:"Clean, unified profiles drive accurate segmentation and personalization, lifting campaign ROI.",
+    products:["Marketing Cloud","Salesforce Data Cloud"],
+    followup:"What's a recent campaign that underperformed because of data quality?" },
+  { label:"Manual data cleanup wasting time", keywords:["manual","spreadsheet","clean up","cleanup","reconcile","by hand","time consuming"],
+    value:"Automated matching and stewardship workflows replace manual reconciliation, freeing skilled people.",
+    products:["Salesforce Data Cloud","Flow / automation"],
+    followup:"How many people-hours per week go into manual data cleanup today?" },
+  { label:"Untrustworthy reporting / forecasting", keywords:["report","forecast","analytics","dashboard","can't trust","inaccurate","kpi"],
+    value:"A reliable master data foundation makes reporting and forecasting trustworthy and AI-ready.",
+    products:["CRM Analytics","Salesforce Data Cloud"],
+    followup:"Which executive report is most undermined by data quality today?" },
+  { label:"Wants AI but data isn't ready", keywords:["ai","einstein","agentforce","predictive","machine learning","genai","llm"],
+    value:"AI is only as good as the data underneath it — master data is the prerequisite for trustworthy AI/agents.",
+    products:["Salesforce Data Cloud","Agentforce","Einstein"],
+    followup:"What AI use case are you targeting, and what data would it depend on?" },
+];
+const MEDDPICC = [
+  ["Metrics","Quantified business impact of solving the data problem"],
+  ["Economic Buyer","Person with budget authority who feels the pain"],
+  ["Decision Criteria","What they'll evaluate solutions against"],
+  ["Decision Process","Steps & timeline to a decision"],
+  ["Paper Process","Procurement / legal / security steps to sign"],
+  ["Identified Pain","The concrete, owned business pain"],
+  ["Champion","Internal advocate selling on your behalf"],
+  ["Competition","Alternatives in play, including 'do nothing'"],
+];
+
+// ---------------------------------------------------------------------------
+// State (persisted to localStorage)
+// ---------------------------------------------------------------------------
+const STORAGE_KEY = "mdm_discovery_accounts_v1";
+let state = load();
+let currentSlug = null;
+
+function load(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e){ return {}; } }
+function persist(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function today(){ return new Date().toISOString().slice(0,10); }
+function slugify(s){ return (s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"") || "account"; }
+function esc(s){ return (s||"").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
+
+function blankAccount(name, owner){
+  const md = {}; MEDDPICC.forEach(([f])=>md[f]="");
+  return { name, slug: slugify(name), stage:"Discovery", owner: owner||"",
+           created: today(), updated: today(), meddpicc: md,
+           landscape:"", pain:"", next_steps:"", notes:[] };
+}
+function detectSignals(text){ const t=(text||"").toLowerCase();
+  return PAIN_SIGNALS.filter(s => s.keywords.some(k => t.includes(k))); }
+function scoreOf(a){ return MEDDPICC.filter(([f]) => (a.meddpicc[f]||"").trim()).length; }
+
+// ---------------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------------
+function show(id){ ['welcome','questionsPanel','detail'].forEach(x=>document.getElementById(x).classList.toggle('hide', x!==id)); }
+
+function renderList(){
+  const el = document.getElementById('acctList');
+  const slugs = Object.keys(state);
+  if (!slugs.length){ el.innerHTML = '<p class="muted">No accounts yet.</p>'; return; }
+  el.innerHTML = '';
+  slugs.sort((a,b)=>state[a].name.localeCompare(state[b].name)).forEach(slug => {
+    const a = state[slug]; const filled = scoreOf(a); const full = filled===MEDDPICC.length;
+    const div = document.createElement('div');
+    div.className = 'acct' + (slug===currentSlug?' active':'');
+    div.onclick = () => selectAccount(slug);
+    div.innerHTML = `<div><div class="nm">${esc(a.name)}</div><div class="meta">${esc(a.stage)}</div></div>
+       <span class="badge ${full?'full':''}">${filled}/${MEDDPICC.length}</span>`;
+    el.appendChild(div);
+  });
+}
+
+function selectAccount(slug){ currentSlug = slug; renderDetail(); show('detail'); renderList(); }
+
+function renderDetail(){
+  const a = state[currentSlug]; if (!a) return;
+  document.getElementById('acctTitle').textContent = a.name;
+  const filled = scoreOf(a); const pct = Math.round(100*filled/MEDDPICC.length);
+  const sb = document.getElementById('scoreBadge');
+  sb.textContent = `MEDDPICC ${filled}/${MEDDPICC.length}`;
+  sb.className = 'badge' + (filled===MEDDPICC.length?' full':'');
+  document.getElementById('scoreFill').style.width = pct + '%';
+  document.getElementById('stage').value = a.stage || 'Discovery';
+  document.getElementById('owner').value = a.owner || '';
+  document.getElementById('landscape').value = a.landscape || '';
+  document.getElementById('pain').value = a.pain || '';
+  document.getElementById('next_steps').value = a.next_steps || '';
+
+  const m = document.getElementById('meddpicc'); m.innerHTML = '';
+  MEDDPICC.forEach(([field,hint]) => {
+    const on = !!(a.meddpicc[field]||"").trim();
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `<label>${esc(field)} <span class="field-mark ${on?'mark-on':'mark-off'}">${on?'✓':'○'}</span></label>`;
+    const inp = document.createElement('input');
+    inp.value = a.meddpicc[field] || ''; inp.placeholder = hint; inp.dataset.field = field; inp.className='meddpicc-input';
+    wrap.appendChild(inp); m.appendChild(wrap);
+  });
+
+  const sig = document.getElementById('signals');
+  const signals = detectSignals(a.pain);
+  sig.innerHTML = signals.length ? signals.map(s => `
+    <div class="signal"><h4>${esc(s.label)}</h4><p>${esc(s.value)}</p>
+      <p class="prod">Salesforce fit: ${esc(s.products.join(', '))}</p>
+      <p class="muted">Ask next: ${esc(s.followup)}</p></div>`).join('')
+    : '<p class="muted">No value drivers detected yet. Fill in pain points and click “Generate MDM value mapping”.</p>';
+
+  const n = document.getElementById('notes');
+  n.innerHTML = (a.notes && a.notes.length) ? a.notes.map(x=>`<div class="note">${esc(x)}</div>`).join('')
+    : '<p class="muted">No notes yet.</p>';
+}
+
+// ---------------------------------------------------------------------------
+// Actions
+// ---------------------------------------------------------------------------
+function createAccount(){
+  const name = document.getElementById('newName').value.trim();
+  const owner = document.getElementById('newOwner').value.trim();
+  if (!name){ toast('Enter an account name'); return; }
+  const slug = slugify(name);
+  if (state[slug]){ toast('Account already exists'); selectAccount(slug); return; }
+  state[slug] = blankAccount(name, owner); persist();
+  document.getElementById('newName').value=''; document.getElementById('newOwner').value='';
+  renderList(); selectAccount(slug); toast('Brief created');
+}
+
+function collectInto(a){
+  a.stage = document.getElementById('stage').value;
+  a.owner = document.getElementById('owner').value;
+  a.landscape = document.getElementById('landscape').value;
+  a.pain = document.getElementById('pain').value;
+  a.next_steps = document.getElementById('next_steps').value;
+  document.querySelectorAll('.meddpicc-input').forEach(i => a.meddpicc[i.dataset.field] = i.value);
+  a.updated = today();
+}
+
+function saveBrief(){ const a=state[currentSlug]; collectInto(a); persist(); renderDetail(); renderList(); toast('Saved'); }
+function runMap(){ const a=state[currentSlug]; collectInto(a); persist(); renderDetail(); toast(detectSignals(a.pain).length + ' value driver(s) mapped'); }
+function addNote(){
+  const txt = document.getElementById('noteText').value.trim(); if (!txt) return;
+  const a = state[currentSlug]; a.notes = a.notes || [];
+  a.notes.push(`**${today()}** ${txt}`); a.updated = today(); persist();
+  document.getElementById('noteText').value=''; renderDetail(); toast('Note added');
+}
+function deleteAccount(){
+  const a = state[currentSlug]; if (!a) return;
+  if (!confirm(`Delete the brief for "${a.name}"? This only removes it from this browser.`)) return;
+  delete state[currentSlug]; persist(); currentSlug=null; show('welcome'); renderList(); toast('Deleted');
+}
+
+function showQuestions(){ show('questionsPanel'); const sel=document.getElementById('qStage');
+  if (!sel.options.length){ Object.keys(STAGE_TO_GROUPS).forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);}); sel.value='discovery'; }
+  loadQuestions(); }
+function loadQuestions(){
+  const stage = document.getElementById('qStage').value || 'discovery';
+  const groups = STAGE_TO_GROUPS[stage] || [];
+  document.getElementById('qContent').innerHTML = groups.map(g => {
+    const grp = QUESTION_BANK[g];
+    return `<div class="qgroup"><h3>${esc(grp.title)}</h3><ol>${grp.questions.map(q=>`<li>${esc(q)}</li>`).join('')}</ol></div>`;
+  }).join('');
+}
+
+// ---------------------------------------------------------------------------
+// Markdown export / import (same format as the git-backed CLI)
+// ---------------------------------------------------------------------------
+function formatValueMap(signals){
+  if (!signals.length) return "_No pain signals detected yet. Add specifics to the Pain Points section (duplicates, single view, compliance, manual cleanup, etc.)._";
+  return signals.map(s => `### ${s.label}\n- **Why it matters / MDM value:** ${s.value}\n- **Salesforce fit:** ${s.products.join(', ')}\n- **Sharpen it next call:** ${s.followup}`).join("\n\n");
+}
+function toMarkdown(a){
+  const md = MEDDPICC.map(([f,hint]) => `- **${f}:** ${ (a.meddpicc[f]||"").trim() || `_(tbd  ${hint})_` }`).join("\n");
+  const body = (s)=> (s && s.trim()) ? s.trim() : "_(empty)_";
+  const notes = (a.notes && a.notes.length) ? a.notes.map(x=>`- ${x}`).join("\n") : "_(empty)_";
+  return `# Discovery Brief: ${a.name}
+
+## Snapshot
+- **Account:** ${a.name}
+- **Stage:** ${a.stage}
+- **Owner:** ${a.owner}
+- **Created:** ${a.created}
+- **Last updated:** ${a.updated}
+
+## Qualification (MEDDPICC)
+${md}
+
+## Current Data Landscape
+${body(a.landscape)}
+
+## Pain Points
+${body(a.pain)}
+
+## MDM Value Mapping
+${formatValueMap(detectSignals(a.pain))}
+
+## Discovery Notes
+${notes}
+
+## Next Steps
+${body(a.next_steps)}
+`;
+}
+function exportMd(){
+  const a = state[currentSlug]; collectInto(a); persist();
+  const blob = new Blob([toMarkdown(a)], {type:"text/markdown"});
+  const url = URL.createObjectURL(blob); const link = document.createElement('a');
+  link.href = url; link.download = a.slug + ".md"; link.click(); URL.revokeObjectURL(url);
+  toast('Exported ' + a.slug + '.md');
+}
+
+function importFile(){ document.getElementById('fileInput').click(); }
+function parseMarkdown(text){
+  const get = (field) => { const m = text.match(new RegExp(`^-\\s+\\*\\*${field.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\$&')}:\\*\\*\\s*(.*)$`,'m'));
+    if (!m) return ""; const v = m[1].trim(); return v.startsWith('_') ? "" : v; };
+  // split sections by "## "
+  const sections = {}; let cur=null, buf=[];
+  text.split(/\r?\n/).forEach(line => { const h = line.match(/^##\s+(.*)$/);
+    if (h){ if(cur!==null) sections[cur]=buf.join("\n").trim(); cur=h[1].trim(); buf=[]; }
+    else if (cur!==null) buf.push(line); });
+  if (cur!==null) sections[cur]=buf.join("\n").trim();
+  const nameMatch = text.match(/^#\s+Discovery Brief:\s+(.*)$/m);
+  const name = (get("Account") || (nameMatch?nameMatch[1].trim():"") || "Imported account");
+  const a = blankAccount(name, get("Owner"));
+  a.stage = get("Stage") || "Discovery";
+  a.created = get("Created") || today(); a.updated = get("Last updated") || today();
+  MEDDPICC.forEach(([f]) => a.meddpicc[f] = get(f));
+  const clean = (b)=>{ b=(b||"").trim(); return (b.startsWith('_(')&&b.endsWith(')_'))?"":b; };
+  a.landscape = clean(sections["Current Data Landscape"]);
+  a.pain = clean(sections["Pain Points"]);
+  a.next_steps = clean(sections["Next Steps"]);
+  const notesBody = clean(sections["Discovery Notes"]);
+  a.notes = notesBody ? notesBody.split(/\r?\n/).map(l=>l.replace(/^-\s+/,'').trim()).filter(Boolean) : [];
+  return a;
+}
+document.getElementById('fileInput').addEventListener('change', function(e){
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { try {
+      const a = parseMarkdown(reader.result); state[a.slug]=a; persist();
+      renderList(); selectAccount(a.slug); toast('Imported ' + a.name);
+    } catch(err){ toast('Could not parse that file'); } };
+  reader.readAsText(file); e.target.value='';
+});
+
+renderList();
+</script>
+</body>
+</html>

@@ -12,19 +12,33 @@ and map the customer's pain to MDM value and the right Salesforce products
 
 No dependencies, no API keys pure Python 3 standard library.
 
-## Visual interface (recommended)
+## Visual interface
 
-Prefer clicking to typing? Launch the built-in web UI no install, no build step:
+There are two ways to use the visual interface pick based on where you are.
+
+### Option A standalone file (easiest, nothing to install)
+
+Open **`DiscoveryAgent.html`** by double-clicking it. That's it the whole app
+runs in your browser, no Python and no server. Your accounts are saved in the
+browser; click **Export .md** on any account to produce a Markdown brief you can
+commit to this repo, and **Import .md** to load briefs your team has committed.
+This is the right choice if you just want to click around and capture insights.
+
+### Option B local web server (git-backed, for team workflows)
 
 ```bash
 python3 -m discovery_agent web
 ```
 
-It opens `http://127.0.0.1:8765` in your browser. From there you can create
-accounts, fill in MEDDPICC and pain points, generate the MDM value mapping with
-one click, add notes, and watch the deal-readiness score update live. Everything
-you do writes to the same `accounts/*.md` files the CLI uses, so the UI and
-command line stay perfectly in sync (and your team still reviews insights via git).
+This opens `http://127.0.0.1:8765` and reads/writes the `accounts/*.md` files
+directly, so the UI and CLI stay perfectly in sync and your team reviews
+insights via normal git commits/PRs.
+
+> **Note:** the server runs on *your own computer*. `127.0.0.1` (localhost) only
+> works on the machine that started the server it is not reachable from a
+> cloud session or another device. If `python3 -m discovery_agent web` shows an
+> address you can't open, you're likely not on the machine running it use
+> Option A instead, or clone the repo locally and run the command there.
 
 ## Quick start (CLI)
 
