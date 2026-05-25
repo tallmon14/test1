@@ -175,6 +175,16 @@
       <h2>MDM value mapping</h2>
       <div class="card" id="signals"></div>
 
+      <h2>ROI &amp; TCO <span class="muted" style="text-transform:none;font-weight:400">— all figures are assumptions you control</span></h2>
+      <div class="card">
+        <div id="roiInputs" class="meddpicc"></div>
+        <div style="margin-top:12px" class="toolbar">
+          <button onclick="saveRoi()">Calculate ROI</button>
+          <span class="muted">Quantifies the pain as money vs the Salesforce investment.</span>
+        </div>
+        <div id="roiResult" style="margin-top:14px"></div>
+      </div>
+
       <h2>Discovery notes</h2>
       <div class="card">
         <div id="notes"></div>
@@ -295,6 +305,53 @@ function renderDetail(d){
   const notes = (d.sections.notes||'').split('\n').filter(x=>x.trim());
   n.innerHTML = notes.length ? notes.map(x=>`<div class="note">${esc(x.replace(/^- /,''))}</div>`).join('')
                              : '<p class="muted">No notes yet.</p>';
+
+  renderRoi(d.roi);
+}
+
+let ROI_CONFIG = null;
+async function renderRoi(roi){
+  if (!ROI_CONFIG) ROI_CONFIG = await api('GET','/api/roi-config');
+  const wrap = document.getElementById('roiInputs'); wrap.innerHTML = '';
+  ROI_CONFIG.specs.forEach(spec => {
+    const div = document.createElement('div');
+    const lbl = document.createElement('label'); lbl.textContent = spec.label; div.appendChild(lbl);
+    let el;
+    if (spec.kind === 'scenario'){
+      el = document.createElement('select');
+      Object.keys(ROI_CONFIG.scenarios).forEach(k => { const o=document.createElement('option'); o.value=k; o.textContent=ROI_CONFIG.scenarios[k].label; el.appendChild(o); });
+      el.value = roi.inputs.scenario || 'none';
+    } else {
+      el = document.createElement('input');
+      el.type = (spec.kind === 'str') ? 'text' : 'number';
+      if (spec.kind === 'pct'){ el.step='0.05'; el.min='0'; el.max='1'; }
+      el.value = roi.inputs[spec.key];
+    }
+    el.dataset.roiKey = spec.key; el.className = 'roi-input';
+    div.appendChild(el); wrap.appendChild(div);
+  });
+  renderRoiResult(roi.results, ROI_CONFIG.scenarios[roi.inputs.scenario] || ROI_CONFIG.scenarios.none);
+}
+function money(cur,v){ return cur+' '+Math.round(v).toLocaleString('en-US'); }
+function renderRoiResult(r, sc){
+  const cur = r.currency;
+  let h = `<p class="muted"><b>${esc(sc.label)}</b> — ${esc(sc.desc)}</p>`;
+  h += '<div class="signal"><h4>Annual benefit (quantified pain)</h4>';
+  r.benefit_breakdown.forEach(([l,v]) => { if (v) h += `<p>${esc(l)}: <b>${money(cur,v)}</b></p>`; });
+  h += `<p class="prod">Total annual benefit: ${money(cur,r.annual_benefit)}</p></div>`;
+  h += `<p>Salesforce cost / year: ${money(cur,r.sf_annual)} &middot; Platform savings / year: ${money(cur,r.platform_savings)}</p>`;
+  h += `<p><b>Net benefit / year: ${money(cur,r.annual_net)}</b></p>`;
+  h += `<p>${r.horizon_years}-yr TCO current: ${money(cur,r.tco_current)} &middot; with Salesforce: ${money(cur,r.tco_future)}</p>`;
+  h += `<p><b>${r.horizon_years}-yr TCO savings: ${money(cur,r.tco_savings)}</b></p>`;
+  const pb = r.payback_months != null ? Math.round(r.payback_months)+' months' : 'n/a (no net benefit)';
+  h += `<p>Payback: ${pb} &middot; <b>${r.horizon_years}-yr ROI: ${Math.round(r.roi_pct)}%</b> (net ${money(cur,r.cumulative_net)} on ${money(cur,r.total_sf_investment)})</p>`;
+  document.getElementById('roiResult').innerHTML = h;
+}
+async function saveRoi(){
+  const inputs = {};
+  document.querySelectorAll('.roi-input').forEach(el => inputs[el.dataset.roiKey] = el.value);
+  const d = await api('POST','/api/accounts/'+currentSlug+'/roi', {inputs});
+  renderDetail(d); toast('ROI calculated');
 }
 
 async function createAccount(){

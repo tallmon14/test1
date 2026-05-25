@@ -144,6 +144,16 @@
       <h2>MDM value mapping</h2>
       <div class="card" id="signals"></div>
 
+      <h2>ROI &amp; TCO <span class="muted" style="text-transform:none;font-weight:400">— all figures are assumptions you control</span></h2>
+      <div class="card">
+        <div id="roiInputs" class="meddpicc"></div>
+        <div style="margin-top:12px" class="toolbar">
+          <button onclick="runRoi()">Calculate ROI</button>
+          <span class="muted">Quantifies the pain as money vs the Salesforce investment.</span>
+        </div>
+        <div id="roiResult" style="margin-top:14px"></div>
+      </div>
+
       <h2>Discovery notes</h2>
       <div class="card">
         <div id="notes"></div>
@@ -277,6 +287,59 @@ const RESEARCH_TOPICS = [
 ];
 
 // ---------------------------------------------------------------------------
+// ROI / TCO model (mirrors discovery_agent/roi.py)
+// ---------------------------------------------------------------------------
+const ROI_SCENARIOS = {
+  none: { label:"Greenfield (no MDM today)", desc:"No MDM in place — value is pain elimination vs the cost of a new platform." },
+  modernization: { label:"Modernization to cloud", desc:"Replace legacy / on-prem MDM with cloud — value = infra + maintenance savings plus pain reduction." },
+  competitive_takeout: { label:"Competitive take-out", desc:"Displace an incumbent (Informatica / Reltio / Profisee) — value = licence delta plus pain reduction." },
+};
+const ROI_SPECS = [
+  {key:"scenario", label:"Estate scenario", kind:"scenario"},
+  {key:"currency", label:"Currency", kind:"str"},
+  {key:"horizon_years", label:"Horizon (years)", kind:"int"},
+  {key:"current_platform_annual", label:"Current MDM platform cost / year (legacy or incumbent; 0 if none)", kind:"money"},
+  {key:"manual_fte", label:"FTEs doing manual data work", kind:"number"},
+  {key:"fte_cost", label:"Loaded cost per FTE / year", kind:"money"},
+  {key:"manual_reduction_pct", label:"Manual effort MDM removes", kind:"pct"},
+  {key:"duplicate_cost_annual", label:"Annual cost of duplicates (ops + waste)", kind:"money"},
+  {key:"duplicate_recovery_pct", label:"Duplicate cost recovered", kind:"pct"},
+  {key:"compliance_exposure_annual", label:"Annual compliance / AML risk exposure", kind:"money"},
+  {key:"compliance_reduction_pct", label:"Compliance risk mitigated", kind:"pct"},
+  {key:"revenue_uplift_annual", label:"Annual revenue / margin uplift from unified data", kind:"money"},
+  {key:"sf_subscription_annual", label:"Salesforce subscription / year (Data Cloud + MuleSoft)", kind:"money"},
+  {key:"sf_run_annual", label:"Salesforce run / admin cost / year", kind:"money"},
+  {key:"sf_implementation_onetime", label:"Salesforce implementation (one-time)", kind:"money"},
+];
+const ROI_DEFAULTS = {scenario:"none",currency:"EUR",horizon_years:3,current_platform_annual:0,manual_fte:0,fte_cost:90000,manual_reduction_pct:0.5,duplicate_cost_annual:0,duplicate_recovery_pct:0.6,compliance_exposure_annual:0,compliance_reduction_pct:0.3,revenue_uplift_annual:0,sf_subscription_annual:0,sf_run_annual:0,sf_implementation_onetime:0};
+
+function roiNum(v){ const n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?0:n; }
+function roiPct(v){ let n=roiNum(v); return Math.max(0, Math.min(1, n>1?n/100:n)); }
+function roiMoney(cur,v){ return cur+" "+Math.round(v).toLocaleString('en-US'); }
+function roiCompute(i){
+  const h=i.horizon_years;
+  const bM=i.manual_fte*i.fte_cost*i.manual_reduction_pct;
+  const bD=i.duplicate_cost_annual*i.duplicate_recovery_pct;
+  const bC=i.compliance_exposure_annual*i.compliance_reduction_pct;
+  const bR=i.revenue_uplift_annual;
+  const annualBenefit=bM+bD+bC+bR;
+  const sfAnnual=i.sf_subscription_annual+i.sf_run_annual;
+  const platformSavings=i.current_platform_annual-sfAnnual;
+  const annualNet=annualBenefit+platformSavings;
+  const addressablePain=i.manual_fte*i.fte_cost+i.duplicate_cost_annual+i.compliance_exposure_annual;
+  const residualPain=addressablePain-(bM+bD+bC);
+  const tcoCurrent=h*(i.current_platform_annual+addressablePain);
+  const tcoFuture=i.sf_implementation_onetime+h*(sfAnnual+residualPain);
+  const totalSf=i.sf_implementation_onetime+h*sfAnnual;
+  const cumulativeNet=h*annualNet-i.sf_implementation_onetime;
+  return {currency:i.currency,horizon_years:h,
+    breakdown:[["Manual effort saved",bM],["Duplicate / data-quality cost recovered",bD],["Compliance / risk mitigated",bC],["Revenue / margin uplift",bR]],
+    annualBenefit,sfAnnual,platformSavings,annualNet,tcoCurrent,tcoFuture,tcoSavings:tcoCurrent-tcoFuture,
+    totalSf,cumulativeNet, roiPct: totalSf? cumulativeNet/totalSf*100 : 0,
+    paybackMonths: annualNet>0? i.sf_implementation_onetime/(annualNet/12) : null};
+}
+
+// ---------------------------------------------------------------------------
 // State (persisted to localStorage)
 // ---------------------------------------------------------------------------
 const STORAGE_KEY = "mdm_discovery_accounts_v1";
@@ -294,7 +357,8 @@ function blankAccount(name, owner){
   const md = {}; MEDDPICC.forEach(([f])=>md[f]="");
   return { name, slug: slugify(name), stage:"Discovery", owner: owner||"",
            created: today(), updated: today(), meddpicc: md,
-           research:"", landscape:"", pain:"", next_steps:"", notes:[] };
+           research:"", landscape:"", pain:"", next_steps:"", notes:[],
+           roi: Object.assign({}, ROI_DEFAULTS) };
 }
 function detectSignals(text){ const t=(text||"").toLowerCase();
   return PAIN_SIGNALS.filter(s => s.keywords.some(k => t.includes(k))); }
@@ -359,7 +423,60 @@ function renderDetail(){
   const n = document.getElementById('notes');
   n.innerHTML = (a.notes && a.notes.length) ? a.notes.map(x=>`<div class="note">${esc(x)}</div>`).join('')
     : '<p class="muted">No notes yet.</p>';
+
+  if (!a.roi) a.roi = Object.assign({}, ROI_DEFAULTS);
+  renderRoiInputs(a); renderRoiResult(a);
 }
+
+function renderRoiInputs(a){
+  const wrap = document.getElementById('roiInputs'); wrap.innerHTML = '';
+  ROI_SPECS.forEach(spec => {
+    const div = document.createElement('div');
+    const lbl = document.createElement('label'); lbl.textContent = spec.label; div.appendChild(lbl);
+    let el;
+    if (spec.kind === 'scenario'){
+      el = document.createElement('select');
+      Object.keys(ROI_SCENARIOS).forEach(k => { const o=document.createElement('option'); o.value=k; o.textContent=ROI_SCENARIOS[k].label; el.appendChild(o); });
+      el.value = a.roi.scenario || 'none';
+    } else {
+      el = document.createElement('input');
+      el.type = (spec.kind === 'str') ? 'text' : 'number';
+      if (spec.kind === 'pct'){ el.step='0.05'; el.min='0'; el.max='1'; }
+      el.value = a.roi[spec.key];
+    }
+    el.dataset.roiKey = spec.key; el.dataset.kind = spec.kind; el.className = 'roi-input';
+    div.appendChild(el); wrap.appendChild(div);
+  });
+}
+
+function collectRoi(a){
+  if (!a.roi) a.roi = Object.assign({}, ROI_DEFAULTS);
+  document.querySelectorAll('.roi-input').forEach(el => {
+    const k = el.dataset.roiKey, kind = el.dataset.kind, v = el.value;
+    if (kind === 'scenario') a.roi[k] = (v in ROI_SCENARIOS) ? v : 'none';
+    else if (kind === 'str') a.roi[k] = v || 'EUR';
+    else if (kind === 'int') a.roi[k] = Math.max(1, Math.round(roiNum(v)));
+    else if (kind === 'pct') a.roi[k] = roiPct(v);
+    else a.roi[k] = roiNum(v);
+  });
+}
+
+function renderRoiResult(a){
+  const r = roiCompute(a.roi); const cur = r.currency;
+  const sc = ROI_SCENARIOS[a.roi.scenario] || ROI_SCENARIOS.none;
+  let h = `<p class="muted"><b>${esc(sc.label)}</b> — ${esc(sc.desc)}</p>`;
+  h += '<div class="signal"><h4>Annual benefit (quantified pain)</h4>';
+  r.breakdown.forEach(([l,v]) => { if (v) h += `<p>${esc(l)}: <b>${roiMoney(cur,v)}</b></p>`; });
+  h += `<p class="prod">Total annual benefit: ${roiMoney(cur,r.annualBenefit)}</p></div>`;
+  h += `<p>Salesforce cost / year: ${roiMoney(cur,r.sfAnnual)} &middot; Platform savings / year: ${roiMoney(cur,r.platformSavings)}</p>`;
+  h += `<p><b>Net benefit / year: ${roiMoney(cur,r.annualNet)}</b></p>`;
+  h += `<p>${r.horizon_years}-yr TCO current: ${roiMoney(cur,r.tcoCurrent)} &middot; with Salesforce: ${roiMoney(cur,r.tcoFuture)}</p>`;
+  h += `<p><b>${r.horizon_years}-yr TCO savings: ${roiMoney(cur,r.tcoSavings)}</b></p>`;
+  const pb = r.paybackMonths != null ? Math.round(r.paybackMonths)+' months' : 'n/a (no net benefit)';
+  h += `<p>Payback: ${pb} &middot; <b>${r.horizon_years}-yr ROI: ${Math.round(r.roiPct)}%</b> (net ${roiMoney(cur,r.cumulativeNet)} on ${roiMoney(cur,r.totalSf)})</p>`;
+  document.getElementById('roiResult').innerHTML = h;
+}
+function runRoi(){ const a=state[currentSlug]; collectRoi(a); a.updated=today(); persist(); renderRoiResult(a); toast('ROI calculated'); }
 
 // ---------------------------------------------------------------------------
 // Actions
@@ -383,6 +500,7 @@ function collectInto(a){
   a.pain = document.getElementById('pain').value;
   a.next_steps = document.getElementById('next_steps').value;
   document.querySelectorAll('.meddpicc-input').forEach(i => a.meddpicc[i.dataset.field] = i.value);
+  collectRoi(a);
   a.updated = today();
 }
 
@@ -426,6 +544,37 @@ function formatValueMap(signals){
   if (!signals.length) return "_No pain signals detected yet. Add specifics to the Pain Points section (duplicates, single view, compliance, manual cleanup, etc.)._";
   return signals.map(s => `### ${s.label}\n- **Why it matters / MDM value:** ${s.value}\n- **Salesforce fit:** ${s.products.join(', ')}\n- **Sharpen it next call:** ${s.followup}`).join("\n\n");
 }
+function roiFormatResultMd(r){
+  const cur=r.currency, h=r.horizon_years; const L=['### Result',''];
+  L.push('**Annual benefit (quantified pain):**');
+  r.breakdown.forEach(([l,v])=>{ if(v) L.push(`- ${l}: ${roiMoney(cur,v)}`); });
+  L.push(`- **Total annual benefit:** ${roiMoney(cur,r.annualBenefit)}`); L.push('');
+  L.push(`- Salesforce cost / year: ${roiMoney(cur,r.sfAnnual)}`);
+  L.push(`- Platform savings vs current estate / year: ${roiMoney(cur,r.platformSavings)}`);
+  L.push(`- **Net benefit / year: ${roiMoney(cur,r.annualNet)}**`); L.push('');
+  L.push(`- ${h}-yr TCO current estate: ${roiMoney(cur,r.tcoCurrent)}`);
+  L.push(`- ${h}-yr TCO with Salesforce: ${roiMoney(cur,r.tcoFuture)}`);
+  L.push(`- **${h}-yr TCO savings: ${roiMoney(cur,r.tcoSavings)}**`); L.push('');
+  const pb = r.paybackMonths!=null ? `${Math.round(r.paybackMonths)} months` : 'n/a (no net benefit)';
+  L.push(`- Payback period: ${pb}`);
+  L.push(`- **${h}-yr ROI: ${Math.round(r.roiPct)}%** (net ${roiMoney(cur,r.cumulativeNet)} on ${roiMoney(cur,r.totalSf)} invested)`);
+  return L.join('\n');
+}
+function roiRenderSectionMd(a){
+  const i = a.roi || ROI_DEFAULTS; const sc = ROI_SCENARIOS[i.scenario] || ROI_SCENARIOS.none;
+  const lines = [`_Scenario: **${sc.label}** — ${sc.desc}_`, '',
+    '<!-- ROI inputs — edit values, then run: python -m discovery_agent roi "<Account>" -->'];
+  ROI_SPECS.forEach(spec => {
+    let v = i[spec.key], shown;
+    if (spec.kind === 'pct') shown = Number(v).toFixed(2);
+    else if (spec.kind === 'money' || spec.kind === 'number') shown = Math.round(Number(v)).toLocaleString('en-US');
+    else shown = v;
+    lines.push(`- ${spec.key}: ${shown}    (${spec.label})`);
+  });
+  lines.push('');
+  lines.push(roiFormatResultMd(roiCompute(i)));
+  return lines.join('\n');
+}
 function toMarkdown(a){
   const md = MEDDPICC.map(([f,hint]) => `- **${f}:** ${ (a.meddpicc[f]||"").trim() || `_(tbd  ${hint})_` }`).join("\n");
   const body = (s)=> (s && s.trim()) ? s.trim() : "_(empty)_";
@@ -453,6 +602,9 @@ ${body(a.pain)}
 
 ## MDM Value Mapping
 ${formatValueMap(detectSignals(a.pain))}
+
+## ROI & TCO
+${roiRenderSectionMd(a)}
 
 ## Discovery Notes
 ${notes}
@@ -492,6 +644,19 @@ function parseMarkdown(text){
   a.next_steps = clean(sections["Next Steps"]);
   const notesBody = clean(sections["Discovery Notes"]);
   a.notes = notesBody ? notesBody.split(/\r?\n/).map(l=>l.replace(/^-\s+/,'').trim()).filter(Boolean) : [];
+  // ROI inputs
+  a.roi = Object.assign({}, ROI_DEFAULTS);
+  (sections["ROI & TCO"]||"").split(/\r?\n/).forEach(line => {
+    const m = line.match(/^-\s+([a-z_]+)\s*:\s*(.*)$/); if (!m) return;
+    const key = m[1]; let raw = m[2].replace(/\s{2,}\(.*\)\s*$/,'').trim();
+    const spec = ROI_SPECS.find(s => s.key === key);
+    if (!spec || !raw || raw.startsWith('_')) return;
+    if (spec.kind === 'scenario') a.roi[key] = (raw in ROI_SCENARIOS) ? raw : 'none';
+    else if (spec.kind === 'str') a.roi[key] = raw || 'EUR';
+    else if (spec.kind === 'int') a.roi[key] = Math.max(1, Math.round(roiNum(raw)));
+    else if (spec.kind === 'pct') a.roi[key] = roiPct(raw);
+    else a.roi[key] = roiNum(raw);
+  });
   return a;
 }
 document.getElementById('fileInput').addEventListener('change', function(e){

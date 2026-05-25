@@ -14,7 +14,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
-from . import framework, store
+from . import framework, store, roi
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
@@ -33,9 +33,12 @@ def _account_detail(slug):
             filled += 1
         meddpicc.append({"field": field, "hint": hint, "value": val})
     signals = framework.detect_signals(sections.get("Pain Points", ""))
+    roi_inputs = roi.parse_inputs(sections.get("ROI & TCO", ""))
+    roi_results = roi.compute(roi_inputs)
     return {
         "name": name,
         "slug": slug,
+        "roi": {"inputs": roi_inputs, "results": roi_results},
         "snapshot": {
             "stage": store.get_field(text, "Stage") or "Discovery",
             "owner": store.get_field(text, "Owner"),
@@ -113,6 +116,10 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/research":
             return self._send_json({"topics": framework.RESEARCH_TOPICS})
 
+        if path == "/api/roi-config":
+            specs = [{"key": k, "label": label, "kind": kind} for k, label, kind, _ in roi.INPUT_SPECS]
+            return self._send_json({"specs": specs, "scenarios": roi.SCENARIOS})
+
         if path == "/api/questions":
             stage = (parse_qs(parsed.query).get("stage") or ["discovery"])[0]
             groups = framework.STAGE_TO_GROUPS.get(stage)
@@ -162,6 +169,9 @@ class Handler(BaseHTTPRequestHandler):
                 if not note:
                     return self._send_json({"error": "empty note"}, 400)
                 store.append_note(name, note)
+                return self._send_json(_account_detail(slug))
+            if action == "roi":
+                store.apply_roi(name, sets=body.get("inputs") or None)
                 return self._send_json(_account_detail(slug))
 
         return self._send_json({"error": "not found"}, 404)

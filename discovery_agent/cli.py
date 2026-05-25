@@ -142,6 +142,28 @@ def cmd_research(args):
     return 0
 
 
+def cmd_roi(args):
+    from . import roi
+    text = store.read(args.name)
+    if text is None:
+        print(f"No brief for '{args.name}'. Create it with: python -m discovery_agent new \"{args.name}\"")
+        return 1
+    sets = {}
+    for item in args.set or []:
+        if "=" not in item:
+            print(f"Ignoring malformed --set '{item}' (expected key=value)")
+            continue
+        k, v = item.split("=", 1)
+        sets[k.strip()] = v.strip()
+    inputs, results = store.apply_roi(args.name, scenario=args.scenario, sets=sets or None)
+    sc = inputs["scenario"]
+    print(f"ROI / TCO  {store.display_name(text, args.name)}  [{roi.SCENARIOS[sc]['label']}]\n")
+    body = roi.format_result(results).replace("### Result\n\n", "").replace("**", "")
+    print(body)
+    print(f"\nWritten to the 'ROI & TCO' section of {store.account_path(args.name)}")
+    return 0
+
+
 def cmd_web(args):
     from . import web
     web.serve(args.host, args.port)
@@ -187,6 +209,14 @@ def build_parser():
     rs = sub.add_parser("research", help="Show the public-info research checklist for an account")
     rs.add_argument("name", nargs="?", help="Optional account name to point findings at")
     rs.set_defaults(func=cmd_research)
+
+    ro = sub.add_parser("roi", help="Compute ROI / TCO for an account from its ROI & TCO inputs")
+    ro.add_argument("name", help="Account name")
+    ro.add_argument("--scenario", choices=["none", "modernization", "competitive_takeout"],
+                    help="Set the estate scenario")
+    ro.add_argument("--set", action="append", metavar="key=value",
+                    help="Override an ROI input (repeatable), e.g. --set manual_fte=8")
+    ro.set_defaults(func=cmd_roi)
 
     w = sub.add_parser("web", help="Launch the visual web interface in a browser")
     w.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")

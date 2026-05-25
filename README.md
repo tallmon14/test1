@@ -74,6 +74,8 @@ python3 -m discovery_agent list
 | `map "<Account>" [--dry-run]` | Reads the **Pain Points** section, detects MDM value drivers, and writes the **MDM Value Mapping** section. |
 | `note "<Account>" "text"` | Appends a timestamped insight to **Discovery Notes**. |
 | `brief "<Account>"` | Shows a MEDDPICC qualification scorecard, detected value drivers, and a suggested next move. |
+| `research ["<Account>"]` | Prints the 10-topic MDM public-info research checklist; optionally names the account to point findings at. |
+| `roi "<Account>" [--scenario none\|modernization\|competitive_takeout] [--set key=value ...]` | Computes ROI & TCO from the inputs in the account brief and writes the **Result** block back into the file. |
 | `list` | Lists all tracked accounts with stage and MEDDPICC score. |
 | `web [--host H] [--port P]` | Launches the visual web interface in your browser. |
 
@@ -82,10 +84,12 @@ python3 -m discovery_agent list
 Every account is one Markdown file in `accounts/` with these sections:
 
 - **Snapshot** account, stage, owner, dates
+- **Account Research** public-info gathered before discovery (`research` command)
 - **Qualification (MEDDPICC)** the eight fields that gate a deal; `brief` scores how many are filled
 - **Current Data Landscape** systems, source-of-truth, volumes
 - **Pain Points** what you heard (the `map` command reads this)
 - **MDM Value Mapping** auto-generated: pain -> MDM value -> Salesforce product -> follow-up question
+- **ROI & TCO** AE-controlled inputs for 3 estate scenarios; `roi` command computes payback, 3yr ROI, and TCO savings
 - **Discovery Notes** timestamped log
 - **Next Steps** owned actions with due dates
 

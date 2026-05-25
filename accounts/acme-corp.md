@@ -60,6 +60,29 @@ _(Systems holding customer data, source-of-truth, volumes, integration style.)_
 - **Salesforce fit:** Salesforce Data Cloud, Agentforce, Einstein
 - **Sharpen it next call:** What AI use case are you targeting, and what data would it depend on?
 
+## ROI & TCO
+_Scenario: **Greenfield (no MDM today)** No MDM in place value is pain elimination vs the cost of a new platform._
+
+<!-- ROI inputs edit values, then run: python -m discovery_agent roi "<Account>" -->
+- scenario: none    (Estate scenario)
+- currency: EUR    (Currency)
+- horizon_years: 3    (Horizon (years))
+- current_platform_annual: 0    (Current MDM platform cost / year (legacy or incumbent; 0 if none))
+- manual_fte: 0    (FTEs doing manual data work)
+- fte_cost: 90,000    (Loaded cost per FTE / year)
+- manual_reduction_pct: 0.50    (Manual effort MDM removes)
+- duplicate_cost_annual: 0    (Annual cost of duplicates (ops + waste))
+- duplicate_recovery_pct: 0.60    (Duplicate cost recovered)
+- compliance_exposure_annual: 0    (Annual compliance / AML risk exposure)
+- compliance_reduction_pct: 0.30    (Compliance risk mitigated)
+- revenue_uplift_annual: 0    (Annual revenue / margin uplift from unified data)
+- sf_subscription_annual: 0    (Salesforce subscription / year (Data Cloud + MuleSoft))
+- sf_run_annual: 0    (Salesforce run / admin cost / year)
+- sf_implementation_onetime: 0    (Salesforce implementation (one-time))
+
+### Result
+_(Run `python -m discovery_agent roi "<Account>"` after editing the inputs above.)_
+
 ## Discovery Notes
 - **2026-05-25** Met w/ VP Data; she owns the data-quality initiative and has budget.
 
