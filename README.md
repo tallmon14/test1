@@ -75,7 +75,8 @@ python3 -m discovery_agent list
 | `note "<Account>" "text"` | Appends a timestamped insight to **Discovery Notes**. |
 | `brief "<Account>"` | Shows a MEDDPICC qualification scorecard, detected value drivers, and a suggested next move. |
 | `research ["<Account>"]` | Prints the 10-topic MDM public-info research checklist; optionally names the account to point findings at. |
-| `roi "<Account>" [--scenario none\|modernization\|competitive_takeout] [--set key=value ...]` | Computes ROI & TCO from the inputs in the account brief and writes the **Result** block back into the file. |
+| `research "<Account>" --auto [--map]` | **Live web research**: calls the Anthropic API with built-in web search to populate the Account Research section automatically. Requires `pip install anthropic` and `ANTHROPIC_API_KEY`. Add `--map` to also regenerate the MDM Value Mapping in the same run. |
+| `roi "<Account>" [--scenario none\|modernization\|competitive_takeout\|expansion] [--set key=value ...]` | Computes ROI & TCO from the inputs in the account brief and writes the **Result** block back into the file. |
 | `list` | Lists all tracked accounts with stage and MEDDPICC score. |
 | `web [--host H] [--port P]` | Launches the visual web interface in your browser. |
 

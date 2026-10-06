@@ -128,6 +128,19 @@ def cmd_brief(args):
 
 
 def cmd_research(args):
+    if args.auto:
+        if not args.name:
+            print("--auto requires an account name: python -m discovery_agent research \"Acme\" --auto")
+            return 1
+        from . import researcher
+        try:
+            researcher.research(args.name, verbose=True, run_map=args.map)
+        except (SystemExit, RuntimeError) as exc:
+            print(str(exc))
+            return 1
+        return 0
+
+    # Manual checklist mode (no --auto)
     print("Account research checklist  public info to gather before discovery")
     print("(MDM-focused: each item ties to where master data lives and why it hurts)\n")
     print(framework.format_research_checklist())
@@ -206,8 +219,13 @@ def build_parser():
     br.add_argument("name", help="Account name")
     br.set_defaults(func=cmd_brief)
 
-    rs = sub.add_parser("research", help="Show the public-info research checklist for an account")
-    rs.add_argument("name", nargs="?", help="Optional account name to point findings at")
+    rs = sub.add_parser("research", help="Show the public-info research checklist, or auto-research via web")
+    rs.add_argument("name", nargs="?", help="Account name (required with --auto)")
+    rs.add_argument("--auto", action="store_true",
+                    help="Fetch live data via the Anthropic API web search tool "
+                         "(requires pip install anthropic and ANTHROPIC_API_KEY)")
+    rs.add_argument("--map", action="store_true",
+                    help="Also regenerate the MDM Value Mapping after --auto research")
     rs.set_defaults(func=cmd_research)
 
     ro = sub.add_parser("roi", help="Compute ROI / TCO for an account from its ROI & TCO inputs")
